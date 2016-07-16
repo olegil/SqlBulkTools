@@ -28,44 +28,44 @@ var bulk = new SqlBulkTools();
 ---------------
 List<Books> books = GetBooks();
 
-bulk.Setup(x => x.ForCollection(books))
-.WithTable("BooksTable")
-.AddColumn(x => x.ISBN)
-.AddColumn(x => x.Title)
-.AddColumn(x => x.Description)
-.BulkInsert();
+bulk.Setup(x => x.ForCollection(books))<br />
+.WithTable("BooksTable")<br />
+.AddColumn(x => x.ISBN)<br />
+.AddColumn(x => x.Title)<br />
+.AddColumn(x => x.Description)<br />
+.BulkInsert();<br />
 
-bulk.CommitTransaction("DefaultConnection");
+bulk.CommitTransaction("DefaultConnection");<br />
 
 ###BulkInsertOrUpdate
 ---------------
 List<Books> books = GetBooks();
 
-bulk.Setup(x => x.ForCollection(books))
-.WithTable("BooksTable")
-.AddColumn(x => x.ISBN)
-.AddColumn(x => x.Title)
-.AddColumn(x => x.Description)
-.CustomColumnMapping(x => x.Title, "BookTitle") // If SQL column name does not match member name, you can set up a custom mapping. 
-.CustomColumnMapping(x => x.Description, "BookDescription")
-.BulkInsertOrUpdate()
-.UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
+bulk.Setup(x => x.ForCollection(books))<br/>
+.WithTable("BooksTable")<br/>
+.AddColumn(x => x.ISBN)<br/>
+.AddColumn(x => x.Title)<br/>
+.AddColumn(x => x.Description)<br/>
+.CustomColumnMapping(x => x.Title, "BookTitle") // If SQL column name does not match member name, you can set up a custom mapping. <br/>
+.CustomColumnMapping(x => x.Description, "BookDescription")<br/>
+.BulkInsertOrUpdate()<br/>
+.UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.<br/>
 
-bulk.CommitTransaction("DefaultConnection");
+bulk.CommitTransaction("DefaultConnection");<br/>
 
 - BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. Use at your own risk. 
 
 ###BulkUpdate
 ---------------
-List<Books> books = GetBooksToUpdate();
-
-bulk.Setup(x => x.ForCollection(books))
-.WithTable("BooksTable")
-.AddColumn(x => x.ISBN)
-.AddColumn(x => x.Title)
-.AddColumn(x => x.Description)
-.BulkUpdate()
-.UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
+List<Books> books = GetBooksToUpdate();<br/>
+<br/>
+bulk.Setup(x => x.ForCollection(books))<br/>
+.WithTable("BooksTable")<br/>
+.AddColumn(x => x.ISBN)<br/>
+.AddColumn(x => x.Title)<br/>
+.AddColumn(x => x.Description)<br/>
+.BulkUpdate()<br/>
+.UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.<br/>
 
 bulk.CommitTransaction("DefaultConnection");
 
@@ -73,26 +73,26 @@ bulk.CommitTransaction("DefaultConnection");
 ---------------
 - Use a DTO containing only the columns needed for performance gains.
 
-List<BookDto> books = GetBooksIDontLike();
+List<BookDto> books = GetBooksIDontLike();<br/>
 
-bulk.Setup(x => x.ForCollection(books))
-.WithTable("BooksTable")
-.AddColumn(x => x.ISBN)
-.BulkUpdate()
-.DeleteOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
+bulk.Setup(x => x.ForCollection(books))<br/>
+.WithTable("BooksTable")<br/>
+.AddColumn(x => x.ISBN)<br/>
+.BulkUpdate()<br/>
+.DeleteOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.<br/>
 
-bulk.CommitTransaction("DefaultConnection");
+bulk.CommitTransaction("DefaultConnection");<br/>
 
 ###Advanced
 ---------------
-List<Books> books = GetBooks();
+List<Books> books = GetBooks();<br/>
 
-bulk.Setup(x => x.ForCollection(books))
-.WithTable("BooksTable")
-.WithSchema("Api") // Specify a schema 
-.WithBulkCopyBatchSize(4000)
-.WithBulkCopyCommandTimeout(720) // Default is 600 seconds
-.WithBulkCopyEnableStreaming(false)
-.WithBulkCopyNotifyAfter(300)
-.WithSqlCommandTimeout(720) // Default is 600 seconds
-.AddColumn(x =>  ........
+bulk.Setup(x => x.ForCollection(books))<br/>
+.WithTable("BooksTable")<br/>
+.WithSchema("Api") // Specify a schema <br/>
+.WithBulkCopyBatchSize(4000)<br/>
+.WithBulkCopyCommandTimeout(720) // Default is 600 seconds<br/>
+.WithBulkCopyEnableStreaming(false)<br/>
+.WithBulkCopyNotifyAfter(300)<br/>
+.WithSqlCommandTimeout(720) // Default is 600 seconds<br/>
+.AddColumn(x =>  ........<br/>
