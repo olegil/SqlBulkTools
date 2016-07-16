@@ -102,6 +102,6 @@ bulk.Setup(x => x.ForCollection(books))
 .WithBulkCopyCommandTimeout(720) // Default is 600 seconds
 .WithBulkCopyEnableStreaming(false)
 .WithBulkCopyNotifyAfter(300)
-.WithSqlCommandTimeout(720) // Default is 600 seconds<br/>
+.WithSqlCommandTimeout(720) // Default is 600 seconds
 .AddColumn(x =>  // ........
 ```
