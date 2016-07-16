@@ -70,7 +70,7 @@ bulk.Setup(x => x.ForCollection(books))
 .AddColumn(x => x.ISBN)
 .AddColumn(x => x.Title)
 .AddColumn(x => x.Description)
-.BulkUpdate()<br/>
+.BulkUpdate()
 .UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
 
 bulk.CommitTransaction("DefaultConnection");
@@ -85,7 +85,7 @@ books = GetBooksIDontLike();
 bulk.Setup(x => x.ForCollection(books))
 .WithTable("BooksTable")
 .AddColumn(x => x.ISBN)
-.BulkUpdate()
+.BulkDelete()
 .DeleteOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
 
 bulk.CommitTransaction("DefaultConnection");
