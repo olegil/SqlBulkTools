@@ -54,7 +54,7 @@ bulk.Setup(x => x.ForCollection(books))
 
 bulk.CommitTransaction("DefaultConnection");
 
-- BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. Use at your own risk. 
+// BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. Use at your own risk. 
 ```
 ###BulkUpdate
 ---------------
