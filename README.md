@@ -19,7 +19,6 @@ public class BookClub(ISqlBulkTools bulk) {
     _bulk = bulk;
   }
     // Do your stuff
-    
 }
 
 // Or simply new up an instance if you prefer.
