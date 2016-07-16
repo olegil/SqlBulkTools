@@ -13,12 +13,13 @@ using SqlBulkTools;
 
 public class BookClub(ISqlBulkTools bulk) {
 
-ISqlBulkTools _bulk;
-
-public BookClub(ISqlBulkTools bulk) {
-  _bulk = bulk;
-}
-  // Do your stuff
+  ISqlBulkTools _bulk;
+  
+  public BookClub(ISqlBulkTools bulk) {
+    _bulk = bulk;
+  }
+    // Do your stuff
+    
 }
 
 // Or simply new up an instance if you prefer.
