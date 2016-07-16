@@ -27,7 +27,7 @@ var bulk = new SqlBulkTools();<br />
 
 ###BulkInsert
 ---------------
-List<Books> books = GetBooks();
+books = GetBooks();
 
 bulk.Setup(x => x.ForCollection(books))<br />
 .WithTable("BooksTable")<br />
@@ -40,7 +40,7 @@ bulk.CommitTransaction("DefaultConnection");<br />
 
 ###BulkInsertOrUpdate
 ---------------
-List<Books> books = GetBooks();
+books = GetBooks();
 
 bulk.Setup(x => x.ForCollection(books))<br/>
 .WithTable("BooksTable")<br/>
@@ -58,7 +58,7 @@ bulk.CommitTransaction("DefaultConnection");<br/>
 
 ###BulkUpdate
 ---------------
-List<Books> books = GetBooksToUpdate();<br/>
+books = GetBooksToUpdate();<br/>
 <br/>
 bulk.Setup(x => x.ForCollection(books))<br/>
 .WithTable("BooksTable")<br/>
@@ -75,7 +75,7 @@ bulk.CommitTransaction("DefaultConnection");
 
 // Use a DTO containing only the columns needed for performance gains.
 
-List<BookDto> books = GetBooksIDontLike();<br/>
+books = GetBooksIDontLike();<br/>
 
 bulk.Setup(x => x.ForCollection(books))<br/>
 .WithTable("BooksTable")<br/>
@@ -87,7 +87,7 @@ bulk.CommitTransaction("DefaultConnection");<br/>
 
 ###Advanced
 ---------------
-List<Books> books = GetBooks();<br/>
+books = GetBooks();<br/>
 
 bulk.Setup(x => x.ForCollection(books))<br/>
 .WithTable("BooksTable")<br/>
