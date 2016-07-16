@@ -56,7 +56,7 @@ bulk.CommitTransaction("DefaultConnection");
 
 /* If SQL column name does not match member name, you can set up a custom mapping. 
 For example: "title" does not exist in table but "booktitle" does. This is a use case
-to support a custom column mapping demonstrated above. 
+to support a custom column mapping (as demonstrated above). 
 
 BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. Use at your own risk.*/
 ```
