@@ -47,8 +47,7 @@ bulk.Setup(x => x.ForCollection(books))
 .AddColumn(x => x.ISBN)
 .AddColumn(x => x.Title)
 .AddColumn(x => x.Description)
-.CustomColumnMapping(x => x.Title, "BookTitle") /*If SQL column name does not 
-match member name, you can set up a custom mapping.*/ 
+.CustomColumnMapping(x => x.Title, "BookTitle") // If SQL column name does not match member name, you can set up a custom mapping. 
 
 .CustomColumnMapping(x => x.Description, "BookDescription")
 .BulkInsertOrUpdate()
@@ -56,8 +55,7 @@ match member name, you can set up a custom mapping.*/
 
 bulk.CommitTransaction("DefaultConnection");
 
-/* BulkInsertOrUpdate also supports DeleteWhenNotMatched which 
-is false by default. Use at your own risk. */
+// BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. Use at your own risk.
 ```
 ###BulkUpdate
 ---------------
@@ -70,8 +68,7 @@ bulk.Setup(x => x.ForCollection(books))
 .AddColumn(x => x.Title)
 .AddColumn(x => x.Description)
 .BulkUpdate()<br/>
-.UpdateOn(x => x.ISBN) /*Can add more columns to update 
-on depending on your business rules.*/
+.UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
 
 bulk.CommitTransaction("DefaultConnection");
 ```
@@ -103,5 +100,5 @@ bulk.Setup(x => x.ForCollection(books))
 .WithBulkCopyEnableStreaming(false)
 .WithBulkCopyNotifyAfter(300)
 .WithSqlCommandTimeout(720) // Default is 600 seconds<br/>
-.AddColumn(x =>  ........
+.AddColumn(x =>  // ........
 ```
