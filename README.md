@@ -29,7 +29,7 @@ var bulk = new SqlBulkTools();
 ```c#
 books = GetBooks();
 
-bulk.Setup(x => x.ForCollection(books))
+bulk.Setup<Book>(x => x.ForCollection(books))
 .WithTable("BooksTable")
 .AddColumn(x => x.ISBN)
 .AddColumn(x => x.Title)
@@ -43,7 +43,7 @@ bulk.CommitTransaction("DefaultConnection");
 ```c#
 books = GetBooks();
 
-bulk.Setup(x => x.ForCollection(books))
+bulk.Setup<Book>(x => x.ForCollection(books))
 .WithTable("BooksTable")
 .AddColumn(x => x.ISBN)
 .AddColumn(x => x.Title)
@@ -66,7 +66,7 @@ BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default.
 ```c#
 books = GetBooksToUpdate();
 
-bulk.Setup(x => x.ForCollection(books))
+bulk.Setup<Book>(x => x.ForCollection(books))
 .WithTable("BooksTable")
 .AddColumn(x => x.ISBN)
 .AddColumn(x => x.Title)
@@ -79,11 +79,11 @@ bulk.CommitTransaction("DefaultConnection");
 ###BulkDelete
 ---------------
 ```c#
-// Use a DTO containing only the columns needed for performance gains.
+// Tip: use a DTO containing only the columns needed for performance gains.
 
 books = GetBooksIDontLike();
 
-bulk.Setup(x => x.ForCollection(books))
+bulk.Setup<BookDto>(x => x.ForCollection(books))
 .WithTable("BooksTable")
 .AddColumn(x => x.ISBN)
 .BulkDelete()
@@ -96,7 +96,7 @@ bulk.CommitTransaction("DefaultConnection");
 ```c#
 books = GetBooks();
 
-bulk.Setup(x => x.ForCollection(books))
+bulk.Setup<Book>(x => x.ForCollection(books))
 .WithTable("BooksTable")
 .WithSchema("Api") // Specify a schema 
 .WithBulkCopyBatchSize(4000)
