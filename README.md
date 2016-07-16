@@ -47,15 +47,18 @@ bulk.Setup(x => x.ForCollection(books))
 .AddColumn(x => x.ISBN)
 .AddColumn(x => x.Title)
 .AddColumn(x => x.Description)
-.CustomColumnMapping(x => x.Title, "BookTitle") // If SQL column name does not match member name, you can set up a custom mapping. 
-
+.CustomColumnMapping(x => x.Title, "BookTitle")
 .CustomColumnMapping(x => x.Description, "BookDescription")
 .BulkInsertOrUpdate()
 .UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
 
 bulk.CommitTransaction("DefaultConnection");
 
-// BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. Use at your own risk.
+/* If SQL column name does not match member name, you can set up a custom mapping. 
+For example: "title" does not exist in table but "booktitle" does. This is a use case
+to support a custom column mapping demonstrated above. 
+
+BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. Use at your own risk.*/
 ```
 ###BulkUpdate
 ---------------
