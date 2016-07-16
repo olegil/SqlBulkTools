@@ -7,22 +7,23 @@ Bulk operations for C# and MSSQL Server with Fluent API. Supports BulkInsert, Bu
 
 ####Getting started
 -----------------------------
-- ISqlBulkTools Interface for easy mocking. 
 
-using SqlBulkTools;
+// ISqlBulkTools Interface for easy mocking. <br />
 
-public class BookClub(ISqlBulkTools bulk) {
+using SqlBulkTools;<br />
 
-ISqlBulkTools _bulk;
-public BookClub(ISqlBulkTools bulk) {
-  _bulk = bulk;
-}
+public class BookClub(ISqlBulkTools bulk) {<br />
 
-}
-
-Or simply new up an instance if you prefer.
-
-var bulk = new SqlBulkTools();
+ISqlBulkTools _bulk;<br />
+public BookClub(ISqlBulkTools bulk) {<br />
+  _bulk = bulk;<br />
+}<br />
+<br />
+}<br />
+<br />
+Or simply new up an instance if you prefer.<br />
+<br />
+var bulk = new SqlBulkTools();<br />
 
 ###BulkInsert
 ---------------
