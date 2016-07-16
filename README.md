@@ -1,13 +1,12 @@
 <img src="http://gregnz.com/images/SqlBulkTools/icon-large.png" alt="SqlBulkTools"> 
-
 #SqlBulkTools
----------------
+-----------------------------
 Bulk operations for C# and MSSQL Server with Fluent API. Supports BulkInsert, BulkUpdate, BulkInsertOrUpdate, BulkDelete. All operations are highly customizable to cater for your needs. 
 
 ##Examples
 
 ####Getting started
-
+-----------------------------
 - ISqlBulkTools Interface for easy mocking. 
 
 using SqlBulkTools;
@@ -26,7 +25,7 @@ Or simply new up an instance if you prefer.
 var bulk = new SqlBulkTools();
 
 ###BulkInsert
-
+---------------
 List<Books> books = GetBooks();
 
 bulk.Setup(x => x.ForCollection(books))
@@ -39,6 +38,7 @@ bulk.Setup(x => x.ForCollection(books))
 bulk.CommitTransaction("DefaultConnection");
 
 ###BulkInsertOrUpdate
+---------------
 List<Books> books = GetBooks();
 
 bulk.Setup(x => x.ForCollection(books))
@@ -56,7 +56,7 @@ bulk.CommitTransaction("DefaultConnection");
 - BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. Use at your own risk. 
 
 ###BulkUpdate
-
+---------------
 List<Books> books = GetBooksToUpdate();
 
 bulk.Setup(x => x.ForCollection(books))
@@ -70,6 +70,7 @@ bulk.Setup(x => x.ForCollection(books))
 bulk.CommitTransaction("DefaultConnection");
 
 ###BulkDelete
+---------------
 - Use a DTO containing only the columns needed for performance gains.
 
 List<BookDto> books = GetBooksIDontLike();
@@ -83,7 +84,7 @@ bulk.Setup(x => x.ForCollection(books))
 bulk.CommitTransaction("DefaultConnection");
 
 ###Advanced
-
+---------------
 List<Books> books = GetBooks();
 
 bulk.Setup(x => x.ForCollection(books))
