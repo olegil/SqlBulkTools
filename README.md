@@ -72,7 +72,8 @@ bulk.CommitTransaction("DefaultConnection");
 
 ###BulkDelete
 ---------------
-- Use a DTO containing only the columns needed for performance gains.
+
+// Use a DTO containing only the columns needed for performance gains.
 
 List<BookDto> books = GetBooksIDontLike();<br/>
 
