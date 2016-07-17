@@ -159,9 +159,14 @@ namespace SqlBulkTools
             return memberExpr.Member.Name;
         }
 
-        public DataTable ToDataTable<T>(IEnumerable<T> items, HashSet<string> columns, Dictionary<string, string> columnMappings)
+        public DataTable ToDataTable<T>(IEnumerable<T> items, HashSet<string> columns, Dictionary<string, string> columnMappings, List<string> matchOnColumns = null)
         {
             DataTable dataTable = new DataTable(typeof(T).Name);
+
+            if (matchOnColumns != null)
+            {
+                columns = CheckForAdditionalColumns(columns, matchOnColumns);
+            }
 
             //Get all the properties
             PropertyInfo[] props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -195,6 +200,26 @@ namespace SqlBulkTools
 
             }
             return dataTable;
+        }
+
+        /// <summary>
+        /// If there are MatchOnColumns that don't exist in columns, add to columns.
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <param name="MatchOnColumns"></param>
+        /// <param name="matchOnColumns"></param>
+        /// <returns></returns>
+        public HashSet<string> CheckForAdditionalColumns(HashSet<string> columns, List<string> matchOnColumns)
+        {
+            foreach (var col in matchOnColumns)
+            {
+                if (!columns.Contains(col))
+                {
+                    columns.Add(col);
+                }
+            }
+
+            return columns;
         }
 
         public void DoColumnMappings(Dictionary<string, string> columnMappings, HashSet<string> columns,

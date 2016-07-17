@@ -100,7 +100,7 @@ namespace SqlBulkTools
                                                     "This is usually the primary key of your table but can also be more than one column depending on your business rules.");
             }
 
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings);
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _matchTargetOn);
