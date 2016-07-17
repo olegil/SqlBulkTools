@@ -1,28 +1,28 @@
 <img src="http://gregnz.com/images/SqlBulkTools/icon-large.png" alt="SqlBulkTools"> 
 #SqlBulkTools
 -----------------------------
-Bulk operations for C# and MSSQL Server with Fluent API. Supports BulkInsert, BulkUpdate, BulkInsertOrUpdate, BulkDelete.
+Bulk operations for C# and MSSQL Server with Fluent API. Supports Bulk Insert, Bulk Update, BulkInsertOrUpdate (Upsert / Merge), Bulk Delete.
 
 ##Examples
 
 ####Getting started
 -----------------------------
 ```c#
-// ISqlBulkTools Interface for easy mocking.
 using SqlBulkTools;
 
-public class BookClub(ISqlBulkTools bulk) {
+// IBulkOperations Interface for easy mocking.
+public class BookClub(IBulkOperations bulk) {
 
-  ISqlBulkTools _bulk;
+  IBulkOperations _bulk;
   
-  public BookClub(ISqlBulkTools bulk) {
+  public BookClub(IBulkOperations bulk) {
     _bulk = bulk;
   }
     // Do your stuff
 }
 
 // Or simply new up an instance if you prefer.
-var bulk = new SqlBulkTools();
+var bulk = new BulkOperations();
 ```
 ###BulkInsert
 ---------------
@@ -51,7 +51,7 @@ bulk.Setup<Book>(x => x.ForCollection(books))
 .CustomColumnMapping(x => x.Title, "BookTitle")
 .CustomColumnMapping(x => x.Description, "BookDescription")
 .BulkInsertOrUpdate()
-.UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
+.MatchTargetOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
 
 bulk.CommitTransaction("DefaultConnection");
 
@@ -72,7 +72,9 @@ bulk.Setup<Book>(x => x.ForCollection(books))
 .AddColumn(x => x.Title)
 .AddColumn(x => x.Description)
 .BulkUpdate()
-.UpdateOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
+.MatchTargetOn(x => x.ISBN, isIdentity: false) // Can add more columns to update on depending on your business rules.
+
+// Notes: If your column is an auto increment column, then set isIdentity to true. 
 
 bulk.CommitTransaction("DefaultConnection");
 ```
@@ -87,7 +89,7 @@ bulk.Setup<BookDto>(x => x.ForCollection(books))
 .WithTable("BooksTable")
 .AddColumn(x => x.ISBN)
 .BulkDelete()
-.DeleteOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
+.MatchTargetOn(x => x.ISBN) // Can add more columns to update on depending on your business rules.
 
 bulk.CommitTransaction("DefaultConnection");
 ```
