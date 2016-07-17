@@ -9,11 +9,11 @@ namespace SqlBulkTools
 {
     public class BulkDelete<T> : ITransaction
     {
-        private readonly List<T> _list; 
+        private readonly ICollection<T> _list; 
         private readonly string _tableName;
         private readonly string _schema;
         private readonly HashSet<string> _columns;
-        private List<string> DeleteOnList { get; set; }
+        private readonly List<string> _matchTargetOn;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
         private readonly SqlBulkToolsHelpers _helper;
@@ -25,7 +25,7 @@ namespace SqlBulkTools
         private readonly int? _bulkCopyBatchSize;
         private readonly SqlBulkTools _ext;
 
-        public BulkDelete(List<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, 
+        public BulkDelete(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, 
             string targetAlias, Dictionary<string, string> customColumnMappings, int sqlTimeout, int bulkCopyTimeout, 
             bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, SqlBulkTools ext)
         {
@@ -33,7 +33,7 @@ namespace SqlBulkTools
             _tableName = tableName;
             _schema = schema;
             _columns = columns;
-            DeleteOnList = new List<string>();
+            _matchTargetOn = new List<string>();
             _sourceAlias = sourceAlias;
             _targetAlias = targetAlias;
             _customColumnMappings = customColumnMappings;
@@ -48,27 +48,29 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// Column(s) needing to match to delete record. At least one column is required. 
+        /// At least one MatchTargetOn is required for correct configuration. MatchTargetOn is the matching clause for evaluating 
+        /// each row in table. This is usally set to the unique identifier in the table (e.g. Id). Multiple MatchTargetOn members are allowed 
+        /// for matching composite relationships. 
         /// </summary>
         /// <param name="columnName"></param>
         /// <returns></returns>
-        public BulkDelete<T> DeleteOn(Expression<Func<T, object>> columnName)
+        public BulkDelete<T> MatchTargetOn(Expression<Func<T, object>> columnName)
         {
             var propertyName = _helper.GetPropertyName(columnName);
-            DeleteOnList.Add(propertyName);
+            _matchTargetOn.Add(propertyName);
             return this;
         }
 
-        public void CommitTransaction(string connectionString, SqlCredential credentials )
+        void ITransaction.CommitTransaction(string connectionString, SqlCredential credentials )
         {
             if (_list.Count == 0)
             {
-                throw new ArgumentException("The collection provided does not contain any objects.");
+                return;
             }
 
-            if (DeleteOnList.Count == 0)
+            if (_matchTargetOn.Count == 0)
             {
-                throw new InvalidOperationException("BulkDelete requires at least one DeleteOn column. This is usually the primary key of the table.");
+                throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. This is usually the primary key of your table but can also be more than one column depending on your business rules.");
             }
 
             DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings);
@@ -105,18 +107,19 @@ namespace SqlBulkTools
 
                         // Updating destination table, and dropping temp table
                         command.CommandTimeout = _sqlTimeout;
-                        string comm = "MERGE INTO " + _tableName + " AS Target " +
+                        string comm = "BEGIN TRANSACTION; " + 
+                                      "MERGE INTO " + _tableName + " AS Target " +
                                       "USING #TmpTable AS Source " +
-                                      _helper.BuildJoinConditionsForUpdateOrInsert(DeleteOnList.ToArray(), 
+                                      _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), 
                                       _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN DELETE; " +
-                                      "DROP TABLE #TmpTable;";
+                                      "DROP TABLE #TmpTable; ";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
                     }
                     catch (Exception)
                     {
-                        command.CommandText = "ROLLBACK Transaction;";
+                        command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
                         command.ExecuteNonQuery();
                         throw;
                     }

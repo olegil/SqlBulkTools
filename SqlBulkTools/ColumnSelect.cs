@@ -6,7 +6,7 @@ namespace SqlBulkTools
 {
     public class ColumnSelect<T>
     {
-        private readonly List<T> _list;
+        private readonly ICollection<T> _list;
         private readonly string _tableName;
         private readonly string _schema;
         private readonly string _sourceAlias;
@@ -18,11 +18,11 @@ namespace SqlBulkTools
         private readonly int? _bulkCopyBatchSize;
         private readonly SqlBulkTools _ext;
         private Dictionary<string, string> CustomColumnMappings { get; set; }
-        private SqlBulkToolsHelpers _helper;
-        private HashSet<string> _columns;
+        private readonly SqlBulkToolsHelpers _helper;
+        private readonly HashSet<string> _columns;
         
 
-        public ColumnSelect(List<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias, 
+        public ColumnSelect(ICollection<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias, 
             int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, 
             SqlBulkTools ext)
         {
@@ -44,24 +44,22 @@ namespace SqlBulkTools
 
 
         /// <summary>
-        /// Add a column to be inserted/updated. 
+        /// Add each column that you want to include in the query. Only include the columns that are relevant to the procedure for best performance. 
         /// </summary>
         /// <param name="columnName">Column name as represented in database</param>
-        /// <param name="columnType">Column type must match represented type in SQL table. For example: nvarchar(max), nvarchar(256), int, bit, etc</param>
+        /// <param name="isIdentity"></param>
         /// <returns></returns>
         public ColumnSelect<T> AddColumn(Expression<Func<T, object>> columnName)
         {
             var propertyName = _helper.GetPropertyName(columnName);
             _columns.Add(propertyName);
-
-            return new ColumnSelect<T>(_list, _tableName, _columns, _schema, _sourceAlias, _targetAlias, _sqlTimeout, 
-                _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, _bulkCopyBatchSize, 
-                _ext);
+            return this;
         }
 
         /// <summary>
-        /// By default will attempt to match model property names to SQL column names. If your model does not match 
-        /// SQL table column(s) then use this method to set up a custom mapping.  
+        /// By default SqlBulkTools will attempt to match the model property names to SQL column names (case insensitive). 
+        /// If any of your model property names do not match 
+        /// the SQL table column(s) as defined in given table, then use this method to set up a custom mapping.  
         /// </summary>
         /// <param name="source">
         /// The object member that has a different name in SQL table. 
@@ -77,6 +75,13 @@ namespace SqlBulkTools
             return this;
         }
 
+        /// <summary>
+        /// A bulk insert will attempt to insert all records. If you have any unique constraints, these must be respected. 
+        /// Notes: (1) Only the columns configured (via AddColumn) will be evaluated.
+        /// 
+        /// another note
+        /// </summary>
+        /// <returns></returns>
         public BulkInsert<T> BulkInsert()
         {
             return new BulkInsert<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, 
@@ -84,6 +89,13 @@ namespace SqlBulkTools
                 _bulkCopyBatchSize, _ext);
         }
 
+        /// <summary>
+        /// A bulk insert or update is also known as bulk upsert or merge. All matching rows from the source will be updated.
+        /// Any unique rows not found in target but exist in source will be added. Notes: (1) BulkInsertOrUpdate requires at least 
+        /// one MatchTargetOn property to be configured. (2) Only the columns configured (via AddColumn) 
+        /// will be evaluated. 
+        /// </summary>
+        /// <returns></returns>
         public BulkInsertOrUpdate<T> BulkInsertOrUpdate()
         {
             return new BulkInsertOrUpdate<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias,
@@ -91,6 +103,11 @@ namespace SqlBulkTools
                 _bulkCopyBatchSize, _ext);
         }
 
+        /// <summary>
+        /// A bulk update will attempt to update any matching records. Notes: (1) BulkUpdate requires at least one MatchTargetOn 
+        /// property to be configured. (2) Only the columns configured (via AddColumn) will be evaluated. 
+        /// </summary>
+        /// <returns></returns>
         public BulkUpdate<T> BulkUpdate()
         {
             return new BulkUpdate<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, 
@@ -98,6 +115,12 @@ namespace SqlBulkTools
                 _bulkCopyBatchSize, _ext);
         }
 
+        /// <summary>
+        /// A bulk delete will delete records when matched. Consider using a DTO with only the needed information (e.g. PK) Notes: 
+        /// (1) BulkUpdate requires at least one MatchTargetOn property to be configured. (2) Only the columns configured (via AddColumn) 
+        /// will be evaluated. 
+        /// </summary>
+        /// <returns></returns>
         public BulkDelete<T> BulkDelete()
         {
             return new BulkDelete<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, CustomColumnMappings, 

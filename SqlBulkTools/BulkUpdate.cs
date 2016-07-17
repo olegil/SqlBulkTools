@@ -9,13 +9,14 @@ namespace SqlBulkTools
 {
     public class BulkUpdate<T> : ITransaction
     {
-        private readonly List<T> _list;
+        private readonly ICollection<T> _list;
         private readonly string _tableName;
         private readonly string _schema;
         private readonly HashSet<string> _columns;
-        private readonly List<string> _updateOnList;
+        private readonly List<string> _matchTargetOn;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
+        private string _identityColumn;
         private readonly Dictionary<string, string> _customColumnMappings;
         private readonly int _sqlTimeout;
         private readonly int _bulkCopyTimeout;
@@ -25,7 +26,7 @@ namespace SqlBulkTools
         private readonly SqlBulkTools _ext;
         private readonly SqlBulkToolsHelpers _helper;
 
-        public BulkUpdate(List<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, string targetAlias, 
+        public BulkUpdate(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, string targetAlias, 
             Dictionary<string, string> customColumnMappings, int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, 
             int? bulkCopyBatchSize, SqlBulkTools ext)
         {
@@ -42,34 +43,54 @@ namespace SqlBulkTools
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;           
             _helper = new SqlBulkToolsHelpers();
-            _updateOnList = new List<string>();
+            _matchTargetOn = new List<string>();
             _ext = ext;
             _ext.SetBulkExt(this);
         }
 
-        public BulkUpdate<T> UpdateOn(Expression<Func<T, object>> columnName)
+        /// <summary>
+        /// At least one MatchTargetOn is required for correct configuration. MatchTargetOn is the matching clause for evaluating 
+        /// each row in table. This is usally set to the unique identifier in the table (e.g. Id). Multiple MatchTargetOn members are allowed 
+        /// for matching composite relationships. 
+        /// </summary>
+        /// <param name="columnName"></param>
+        /// <param name="isIdentity"></param>
+        /// <returns></returns>
+        public BulkUpdate<T> MatchTargetOn(Expression<Func<T, object>> columnName, bool isIdentity = false)
         {
             var propertyName = _helper.GetPropertyName(columnName);
-            _updateOnList.Add(propertyName);
+            _matchTargetOn.Add(propertyName);
+
+            if (isIdentity)
+            {
+                if (_identityColumn == null)
+                    _identityColumn = propertyName;
+
+                else
+                {
+                    throw new InvalidOperationException("Can't have more than one identity column");
+                }
+            }
             return this;
         }
 
-        public void CommitTransaction(string connectionString, SqlCredential credentials)
+        void ITransaction.CommitTransaction(string connectionString, SqlCredential credentials)
         {
             if (_list.Count == 0)
             {
-                throw new ArgumentException("The collection provided does not contain any objects.");
+                return;
             }
 
-            if (_updateOnList.Count == 0) 
+            if (_matchTargetOn.Count == 0) 
             {
-                throw new InvalidOperationException("BulkUpdate requires at least one UpdateOn column. This is usually the primary key of the table but can also be more than one column if you wish.");
+                throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. This is usually " +
+                                                    "the primary key of your table but can also be more than one column depending on your business rules.");
             }
 
             DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings);
 
             // Must be after ToDataTable is called. 
-            _helper.DoColumnMappings(_customColumnMappings, _columns, _updateOnList);
+            _helper.DoColumnMappings(_customColumnMappings, _columns, _matchTargetOn);
 
             ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
             using (SqlConnection conn = new SqlConnection(ConfigurationManager
@@ -80,7 +101,6 @@ namespace SqlBulkTools
                 {
                     try
                     {
-
                         conn.Open();
                         var dtCols = _helper.GetSchema(conn, _schema, _tableName);
 
@@ -103,18 +123,20 @@ namespace SqlBulkTools
 
                         // Updating destination table, and dropping temp table
                         command.CommandTimeout = _sqlTimeout;
-                        string comm = "MERGE INTO " + _tableName + " AS Target " +
+
+                        string comm = "BEGIN TRANSACTION; " + 
+                                      "MERGE INTO " + _tableName + " AS Target " +
                                       "USING #TmpTable AS Source " +
-                                      _helper.BuildJoinConditionsForUpdateOrInsert(_updateOnList.ToArray(), _sourceAlias, _targetAlias) +
+                                      _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN " +
-                                      _helper.BuildUpdateSet(_columns, _sourceAlias, _targetAlias) + "; " + 
-                                      "DROP TABLE #TmpTable;";
+                                      _helper.BuildUpdateSet(_columns, _sourceAlias, _targetAlias, _identityColumn) + "; " +
+                                      "DROP TABLE #TmpTable; ";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
                     }
                     catch (Exception e)
                     {
-                        command.CommandText = "ROLLBACK Transaction;";
+                        command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
                         command.ExecuteNonQuery();
                         throw;
                     }

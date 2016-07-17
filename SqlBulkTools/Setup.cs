@@ -15,11 +15,14 @@ namespace SqlBulkTools
             _ext = ext;
         }
 
-        public TableSelect<T> ForCollection(List<T> list)
+        /// <summary>
+        /// Represents the collection of objects to be inserted/upserted/updated/deleted (configured in next steps). 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public CollectionSelect<T> ForCollection(ICollection<T> list)
         {
-            return new TableSelect<T>(list, _sourceAlias, _targetAlias, _ext);
+            return new CollectionSelect<T>(list, _sourceAlias, _targetAlias, _ext);
         }
-
-
     }
 }

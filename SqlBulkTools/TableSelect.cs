@@ -2,14 +2,14 @@
 
 namespace SqlBulkTools
 {
-    public class TableSelect<T>
+    public class CollectionSelect<T>
     {
-        private readonly List<T> _list;
+        private readonly ICollection<T> _list;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
-        private readonly global::SqlBulkTools.SqlBulkTools _ext;
+        private readonly SqlBulkTools _ext;
 
-        internal TableSelect(List<T> list, string sourceAlias, string targetAlias, global::SqlBulkTools.SqlBulkTools ext)
+        internal CollectionSelect(ICollection<T> list, string sourceAlias, string targetAlias, SqlBulkTools ext)
         {
             _list = list;
             _sourceAlias = sourceAlias;
@@ -18,9 +18,9 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// Set the name of table for operation to take place. 
+        /// Set the name of table for operation to take place. Registering a table is Required.
         /// </summary>
-        /// <param name="table">Adding a table is Required</param>
+        /// <param name="table">Name of the table.</param>
         /// <returns></returns>
         public Table<T> WithTable(string table)
         {

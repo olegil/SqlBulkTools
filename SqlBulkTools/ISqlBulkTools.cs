@@ -6,6 +6,6 @@ namespace SqlBulkTools
     public interface ISqlBulkTools
     {
         void CommitTransaction(string connectionString, SqlCredential credentials = null);
-        TableSelect<T> Setup<T>(Func<Setup<T>, TableSelect<T>> list);
+        CollectionSelect<T> Setup<T>(Func<Setup<T>, CollectionSelect<T>> list);
     }
 }

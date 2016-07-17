@@ -90,7 +90,7 @@ namespace SqlBulkTools
             return command.ToString();
         }
 
-        public string BuildUpdateSet(HashSet<string> columns, string sourceAlias, string targetAlias)
+        public string BuildUpdateSet(HashSet<string> columns, string sourceAlias, string targetAlias, string identityColumn)
         {
             StringBuilder command = new StringBuilder();
             List<string> paramsSeparated = new List<string>();
@@ -99,7 +99,10 @@ namespace SqlBulkTools
 
             foreach (var column in columns.ToList())
             {
-                paramsSeparated.Add(targetAlias + "." + column + " = " + sourceAlias + "." + column);
+                if (identityColumn != null && column != identityColumn || identityColumn == null)
+                {
+                    paramsSeparated.Add(targetAlias + "." + column + " = " + sourceAlias + "." + column);
+                }             
             }
 
             command.Append(string.Join(", ", paramsSeparated) + " ");
@@ -153,7 +156,7 @@ namespace SqlBulkTools
             return memberExpr.Member.Name;
         }
 
-        public DataTable ToDataTable<T>(List<T> items, HashSet<string> columns, Dictionary<string, string> columnMappings)
+        public DataTable ToDataTable<T>(IEnumerable<T> items, HashSet<string> columns, Dictionary<string, string> columnMappings)
         {
             DataTable dataTable = new DataTable(typeof(T).Name);
 
@@ -179,7 +182,7 @@ namespace SqlBulkTools
                 {
                     for (int i = 0; i < props.Length; i++)
                     {
-                        if (props[i].Name == column)
+                        if (props[i].Name == column && item != null)
                             values.Add(props[i].GetValue(item, null));
                     }
 
@@ -228,9 +231,16 @@ namespace SqlBulkTools
                     }
                 }
             }
-
         }
 
+        /// <summary>
+        /// Advanced Settings for SQLBulkCopy class. 
+        /// </summary>
+        /// <param name="bulkcopy"></param>
+        /// <param name="bulkCopyEnableStreaming"></param>
+        /// <param name="bulkCopyBatchSize"></param>
+        /// <param name="bulkCopyNotifyAfter"></param>
+        /// <param name="bulkCopyTimeout"></param>
         public void SetSqlBulkCopySettings(SqlBulkCopy bulkcopy, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
         {
             bulkcopy.EnableStreaming = bulkCopyEnableStreaming;
@@ -248,6 +258,12 @@ namespace SqlBulkTools
             bulkcopy.BulkCopyTimeout = bulkCopyTimeout;
         }
 
+        /// <summary>
+        /// This is used only for the BulkInsert method at this time.  
+        /// </summary>
+        /// <param name="bulkCopy"></param>
+        /// <param name="columns"></param>
+        /// <param name="customColumnMappings"></param>
         public void MapColumns(SqlBulkCopy bulkCopy, HashSet<string> columns, Dictionary<string, string> customColumnMappings)
         {
 
@@ -266,6 +282,13 @@ namespace SqlBulkTools
 
         }
 
+        /// <summary>
+        /// Gets schema information for a table. Used to get SQL type of property. 
+        /// </summary>
+        /// <param name="conn"></param>
+        /// <param name="schema"></param>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
         public DataTable GetSchema(SqlConnection conn, string schema, string tableName)
         {
             string[] restrictions = new string[4];

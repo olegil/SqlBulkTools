@@ -74,7 +74,7 @@ namespace SqlBulkTools.UnitTests
             var sut = new SqlBulkToolsHelpers();
 
             // Act
-            var result = sut.BuildUpdateSet(updateOrInsertColumns, "Source", "Target");
+            var result = sut.BuildUpdateSet(updateOrInsertColumns, "Source", "Target", null);
 
             // Assert
             Assert.AreEqual(expected, result);
@@ -93,7 +93,7 @@ namespace SqlBulkTools.UnitTests
             var sut = new SqlBulkToolsHelpers();
 
             // Act
-            var result = sut.BuildUpdateSet(updateOrInsertColumns, "Source", "Target");
+            var result = sut.BuildUpdateSet(updateOrInsertColumns, "Source", "Target", null);
 
             // Assert
             Assert.AreEqual(expected, result);

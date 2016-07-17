@@ -52,7 +52,6 @@
     <Compile Include="Setup.cs" />
     <Compile Include="SqlBulkTools.cs" />
     <Compile Include="SqlBulkToolsHelpers.cs" />
-    <Compile Include="SqlBulkToolsValidator.cs" />
     <Compile Include="Table.cs" />
     <Compile Include="TableSelect.cs" />
   </ItemGroup>
