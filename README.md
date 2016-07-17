@@ -8,8 +8,9 @@ Bulk operations for C# and MSSQL Server with Fluent API. Supports Bulk Insert, B
 ####Getting started
 -----------------------------
 ```c#
-// IBulkOperations Interface for easy mocking.
 using SqlBulkTools;
+
+// IBulkOperations Interface for easy mocking.
 
 public class BookClub(IBulkOperations bulk) {
 
