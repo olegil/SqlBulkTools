@@ -16,17 +16,17 @@ namespace SqlBulkTools
         private readonly bool _bulkCopyEnableStreaming;
         private readonly int? _bulkCopyNotifyAfter;
         private readonly int? _bulkCopyBatchSize;
-        private readonly SqlBulkTools _ext;
+        private readonly BulkOperations _ext;
         private Dictionary<string, string> CustomColumnMappings { get; set; }
-        private readonly SqlBulkToolsHelpers _helper;
+        private readonly BulkOperationsHelpers _helper;
         private readonly HashSet<string> _columns;
         
 
         public ColumnSelect(ICollection<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias, 
             int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, 
-            SqlBulkTools ext)
+            BulkOperations ext)
         {
-            _helper = new SqlBulkToolsHelpers();
+            _helper = new BulkOperationsHelpers();
             _list = list;
             _columns = columns;
             _tableName = tableName;

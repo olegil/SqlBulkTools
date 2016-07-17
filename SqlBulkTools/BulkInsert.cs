@@ -15,8 +15,8 @@ namespace SqlBulkTools
         private readonly List<string> _updateOnList;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
-        private readonly SqlBulkTools _ext;
-        private readonly SqlBulkToolsHelpers _helper;
+        private readonly BulkOperations _ext;
+        private readonly BulkOperationsHelpers _helper;
         private readonly Dictionary<string, string> _customColumnMappings;
         private readonly int _bulkCopyTimeout;
         private readonly bool _bulkCopyEnableStreaming;
@@ -25,7 +25,7 @@ namespace SqlBulkTools
 
         public BulkInsert(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias,
             string targetAlias, Dictionary<string, string> customColumnMappings, int bulkCopyTimeout, bool bulkCopyEnableStreaming,
-            int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, SqlBulkTools ext)
+            int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, BulkOperations ext)
         {
             _list = list;
             _tableName = tableName;
@@ -33,7 +33,7 @@ namespace SqlBulkTools
             _columns = columns;
             _sourceAlias = sourceAlias;
             _targetAlias = targetAlias;
-            _helper = new SqlBulkToolsHelpers();
+            _helper = new BulkOperationsHelpers();
             _updateOnList = new List<string>();
             _customColumnMappings = customColumnMappings;
             _bulkCopyTimeout = bulkCopyTimeout;

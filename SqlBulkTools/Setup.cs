@@ -6,9 +6,9 @@ namespace SqlBulkTools
     {
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
-        private readonly SqlBulkTools _ext;
+        private readonly BulkOperations _ext;
 
-        internal Setup(string sourceAlias, string targetAlias, SqlBulkTools ext)
+        public Setup(string sourceAlias, string targetAlias, BulkOperations ext)
         {
             _sourceAlias = sourceAlias;
             _targetAlias = targetAlias;

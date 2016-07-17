@@ -163,7 +163,7 @@ namespace SqlBulkTools.IntegrationTests
 
             BookDto[] col = GetBookDtoCol(recordCount);
 
-            SqlBulkTools bulk = new SqlBulkTools();
+            BulkOperations bulk = new BulkOperations();
             bulk.Setup<BookDto>(x => x.ForCollection(col))
                 .WithTable("Books")
                 .AddColumn(x => x.Id)
@@ -214,7 +214,7 @@ namespace SqlBulkTools.IntegrationTests
 
         private long BulkInsert(ICollection<Book> col)
         {           
-            SqlBulkTools bulk = new SqlBulkTools();
+            BulkOperations bulk = new BulkOperations();
             bulk.Setup<Book>(x => x.ForCollection(col))
                 .WithTable("Books")
                 .AddColumn(x => x.Title)
@@ -232,7 +232,7 @@ namespace SqlBulkTools.IntegrationTests
 
         private long BulkInsertOrUpdate(ICollection<Book> col)
         {
-            SqlBulkTools bulk = new SqlBulkTools();
+            BulkOperations bulk = new BulkOperations();
             bulk.Setup<Book>(x => x.ForCollection(col))
                 .WithTable("Books")
                 .AddColumn(x => x.Title)
@@ -253,7 +253,7 @@ namespace SqlBulkTools.IntegrationTests
 
         private long BulkUpdate(ICollection<Book> col)
         {
-            SqlBulkTools bulk = new SqlBulkTools();
+            BulkOperations bulk = new BulkOperations();
             bulk.Setup<Book>(x => x.ForCollection(col))
                 .WithTable("Books")
                 .AddColumn(x => x.Id)
@@ -263,7 +263,7 @@ namespace SqlBulkTools.IntegrationTests
                 .AddColumn(x => x.ISBN)
                 .AddColumn(x => x.PublishDate)
                 .BulkUpdate()
-                .MatchTargetOn(x => x.Id, true);
+                .MatchTargetOn(x => x.Id, isIdentity: true);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
             bulk.CommitTransaction("SqlBulkToolsTest");
@@ -275,7 +275,7 @@ namespace SqlBulkTools.IntegrationTests
 
         private long BulkDelete(ICollection<Book> col)
         {
-            SqlBulkTools bulk = new SqlBulkTools();
+            BulkOperations bulk = new BulkOperations();
             bulk.Setup<Book>(x => x.ForCollection(col))
                 .WithTable("Books")
                 .AddColumn(x => x.Id)

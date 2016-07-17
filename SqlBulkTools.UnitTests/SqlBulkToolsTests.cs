@@ -13,7 +13,7 @@ namespace SqlBulkTools.UnitTests
         public void BulkExtHelpers_RemoveSchemaFromTable_RemovesSchema(string tableName, string expectedResult)
         {
             // Arrange
-            var sut = new SqlBulkToolsHelpers();
+            var sut = new BulkOperationsHelpers();
 
             // Act
             var result = sut.RemoveSchemaFromTable(tableName);
@@ -27,7 +27,7 @@ namespace SqlBulkTools.UnitTests
         {
             // Arrange
             List<string> joinOnList = new List<string>() { "MarketPlaceId", "FK_BusinessId", "AddressId" };
-            var sut = new SqlBulkToolsHelpers();
+            var sut = new BulkOperationsHelpers();
 
             // Act
             var result = sut.BuildJoinConditionsForUpdateOrInsert(joinOnList.ToArray(), "Source", "Target");
@@ -41,7 +41,7 @@ namespace SqlBulkTools.UnitTests
         {
             // Arrange
             List<string> joinOnList = new List<string>() { "MarketPlaceId", "FK_BusinessId" };
-            var sut = new SqlBulkToolsHelpers();
+            var sut = new BulkOperationsHelpers();
 
             // Act
             var result = sut.BuildJoinConditionsForUpdateOrInsert(joinOnList.ToArray(), "Source", "Target");
@@ -55,7 +55,7 @@ namespace SqlBulkTools.UnitTests
         {
             // Arrange
             List<string> joinOnList = new List<string>() { "MarketPlaceId" };
-            var sut = new SqlBulkToolsHelpers();
+            var sut = new BulkOperationsHelpers();
 
             // Act
             var result = sut.BuildJoinConditionsForUpdateOrInsert(joinOnList.ToArray(), "Source", "Target");
@@ -71,7 +71,7 @@ namespace SqlBulkTools.UnitTests
             var updateOrInsertColumns = GetTestParameters();
             var expected =
                 "UPDATE SET Target.id = Source.id, Target.Name = Source.Name, Target.Town = Source.Town, Target.Email = Source.Email, Target.IsCool = Source.IsCool ";
-            var sut = new SqlBulkToolsHelpers();
+            var sut = new BulkOperationsHelpers();
 
             // Act
             var result = sut.BuildUpdateSet(updateOrInsertColumns, "Source", "Target", null);
@@ -90,7 +90,7 @@ namespace SqlBulkTools.UnitTests
 
             var expected =
                 "UPDATE SET Target.Id = Source.Id ";
-            var sut = new SqlBulkToolsHelpers();
+            var sut = new BulkOperationsHelpers();
 
             // Act
             var result = sut.BuildUpdateSet(updateOrInsertColumns, "Source", "Target", null);
@@ -107,7 +107,7 @@ namespace SqlBulkTools.UnitTests
             var updateOrInsertColumns = GetTestParameters();
             var expected =
                 "INSERT (id, Name, Town, Email, IsCool) values (Source.id, Source.Name, Source.Town, Source.Email, Source.IsCool)";
-            var sut = new SqlBulkToolsHelpers();
+            var sut = new BulkOperationsHelpers();
 
             // Act
             var result = sut.BuildInsertSet(updateOrInsertColumns, "Source");
@@ -125,7 +125,7 @@ namespace SqlBulkTools.UnitTests
             updateOrInsertColumns.Add("Id");
             var expected =
                 "INSERT (Id) values (Source.Id)";
-            var sut = new SqlBulkToolsHelpers();
+            var sut = new BulkOperationsHelpers();
 
             // Act
             var result = sut.BuildInsertSet(updateOrInsertColumns, "Source");

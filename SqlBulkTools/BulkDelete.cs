@@ -16,18 +16,18 @@ namespace SqlBulkTools
         private readonly List<string> _matchTargetOn;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
-        private readonly SqlBulkToolsHelpers _helper;
+        private readonly BulkOperationsHelpers _helper;
         private readonly Dictionary<string, string> _customColumnMappings;
         private readonly int _sqlTimeout;
         private readonly int _bulkCopyTimeout;
         private readonly bool _bulkCopyEnableStreaming;
         private readonly int? _bulkCopyNotifyAfter;
         private readonly int? _bulkCopyBatchSize;
-        private readonly SqlBulkTools _ext;
+        private readonly BulkOperations _ext;
 
         public BulkDelete(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, 
             string targetAlias, Dictionary<string, string> customColumnMappings, int sqlTimeout, int bulkCopyTimeout, 
-            bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, SqlBulkTools ext)
+            bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, BulkOperations ext)
         {
             _list = list;
             _tableName = tableName;
@@ -42,7 +42,7 @@ namespace SqlBulkTools
             _bulkCopyEnableStreaming = bulkCopyEnableStreaming;
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;
-            _helper = new SqlBulkToolsHelpers();
+            _helper = new BulkOperationsHelpers();
             _ext = ext;           
             _ext.SetBulkExt(this);
         }

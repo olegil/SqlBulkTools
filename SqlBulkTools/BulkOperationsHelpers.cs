@@ -5,12 +5,15 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
+[assembly: InternalsVisibleTo("SqlBulkTools.UnitTests")]
+[assembly: InternalsVisibleTo("SqlBulkTools.IntegrationTests")]
 namespace SqlBulkTools
-{
-    public class SqlBulkToolsHelpers
+{   
+    internal class BulkOperationsHelpers
     {
         public string BuildCreateTempTable(HashSet<string> columns, DataTable schema)
         {

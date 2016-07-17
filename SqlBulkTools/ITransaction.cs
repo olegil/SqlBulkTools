@@ -2,7 +2,7 @@
 
 namespace SqlBulkTools
 {
-    public interface ITransaction
+    internal interface ITransaction
     {
         void CommitTransaction(string connectionString, SqlCredential credentials = null);
     }

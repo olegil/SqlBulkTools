@@ -23,13 +23,13 @@ namespace SqlBulkTools
         private readonly bool _bulkCopyEnableStreaming;
         private readonly int? _bulkCopyNotifyAfter;
         private readonly int? _bulkCopyBatchSize;
-        private readonly SqlBulkTools _ext;
-        private readonly SqlBulkToolsHelpers _helper;
+        private readonly BulkOperations _ext;
+        private readonly BulkOperationsHelpers _helper;
         private bool _deleteWhenNotMatchedFlag;
 
         public BulkInsertOrUpdate(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, string targetAlias, 
             Dictionary<string, string> customColumnMappings, int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, 
-            int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, SqlBulkTools ext)
+            int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, BulkOperations ext)
         {
             _list = list;
             _tableName = tableName;
@@ -44,7 +44,7 @@ namespace SqlBulkTools
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;            
             _deleteWhenNotMatchedFlag = false;
-            _helper = new SqlBulkToolsHelpers();
+            _helper = new BulkOperationsHelpers();
             _matchTargetOn = new List<string>();
             _ext = ext;
             _ext.SetBulkExt(this);          

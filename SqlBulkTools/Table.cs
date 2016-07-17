@@ -9,12 +9,12 @@ namespace SqlBulkTools
         private HashSet<string> Columns { get; set; }
         private List<string> UpdateOnList { get; set; }
         private List<string> DeleteOnList { get; set; }
-        private readonly SqlBulkToolsHelpers _helper;
+        private readonly BulkOperationsHelpers _helper;
         private string _schema;
         private readonly string _tableName;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
-        private readonly SqlBulkTools _ext;
+        private readonly BulkOperations _ext;
         private readonly ICollection<T> _list;
         private Dictionary<string, string> CustomColumnMappings { get; set; }
         private int _sqlTimeout;
@@ -23,12 +23,12 @@ namespace SqlBulkTools
         private int? _bulkCopyNotifyAfter;
         private int? _bulkCopyBatchSize;
 
-        public Table(ICollection<T> list, string tableName, string sourceAlias, string targetAlias, SqlBulkTools ext)
+        public Table(ICollection<T> list, string tableName, string sourceAlias, string targetAlias, BulkOperations ext)
         {
             _bulkCopyBatchSize = null;
             _bulkCopyNotifyAfter = null;
             _bulkCopyEnableStreaming = false;
-            _helper = new SqlBulkToolsHelpers();
+            _helper = new BulkOperationsHelpers();
             _tableName = tableName;
             _sourceAlias = sourceAlias;
             _targetAlias = targetAlias;

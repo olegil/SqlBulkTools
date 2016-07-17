@@ -7,9 +7,9 @@ namespace SqlBulkTools
         private readonly ICollection<T> _list;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
-        private readonly SqlBulkTools _ext;
+        private readonly BulkOperations _ext;
 
-        internal CollectionSelect(ICollection<T> list, string sourceAlias, string targetAlias, SqlBulkTools ext)
+        public CollectionSelect(ICollection<T> list, string sourceAlias, string targetAlias, BulkOperations ext)
         {
             _list = list;
             _sourceAlias = sourceAlias;

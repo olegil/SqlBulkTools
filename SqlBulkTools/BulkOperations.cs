@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 
 namespace SqlBulkTools
 {
-    public class SqlBulkTools : ITransaction, ISqlBulkTools
+    public class BulkOperations : ITransaction, IBulkOperations
     {
         private ITransaction _transaction;
         private const string SourceAlias = "Source";

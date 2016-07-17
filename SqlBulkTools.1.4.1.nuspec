@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>SqlBulkTools</id>
+        <version>1.4.1</version>
+        <title>SqlBulkTools</title>
+        <authors>Greg Taylor</authors>
+        <owners>Greg Taylor</owners>
+        <licenseUrl>https://github.com/gtaylor44/SqlBulkTools/blob/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/gtaylor44/SqlBulkTools/</projectUrl>
+        <iconUrl>http://gregnz.com/images/SqlBulkTools/icon.png</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Bulk operations for C# and MSSQL Server with Fluent API. Supports Bulk Insert, Bulk Update, BulkInsertOrUpdate (Upsert/Merge), Bulk Delete.</description>
+        <summary>See https://github.com/gtaylor44/SqlBulkTools for examples</summary>
+        <releaseNotes>Targeting .NET 4.5</releaseNotes>
+        <language>en-AU</language>
+        <tags>SQL BulkInsert BulkUpdate BulkInsertOrUpdate Upsert Merge BulkDelete</tags>
+    </metadata>
+    <files>
+        <file src="content\_._" target="content\_._" />
+        <file src="SqlBulkTools\bin\Debug\SqlBulkTools.dll" target="lib\net45\SqlBulkTools.dll" />
+    </files>
+</package>
