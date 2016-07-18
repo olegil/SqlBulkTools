@@ -111,7 +111,7 @@ namespace SqlBulkTools
                         //Bulk insert into temp table
                         using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn))
                         {
-                            
+
                             bulkcopy.DestinationTableName = "#TmpTable";
 
                             _helper.SetSqlBulkCopySettings(bulkcopy, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
@@ -124,20 +124,37 @@ namespace SqlBulkTools
                         // Updating destination table, and dropping temp table
                         command.CommandTimeout = _sqlTimeout;
 
-                        string comm = "BEGIN TRANSACTION; " + 
+                        string comm = "BEGIN TRANSACTION; " +
                                       "MERGE INTO " + _tableName + " AS Target " +
                                       "USING #TmpTable AS Source " +
-                                      _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), _sourceAlias, _targetAlias) +
+                                      _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
+                                          _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN " +
-                                      _helper.BuildUpdateSet(_columns, _sourceAlias, _targetAlias, _identityColumn) + "; " +
+                                      _helper.BuildUpdateSet(_columns, _sourceAlias, _targetAlias, _identityColumn) +
+                                      "; " +
                                       "DROP TABLE #TmpTable; ";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
                     }
+
+                    catch (SqlException e)
+                    {
+                        for (int i = 0; i < e.Errors.Count; i++)
+                        {
+                            // Error 8102 is identity error. 
+                            if (e.Errors[i].Number == 8102)
+                            {
+                                // Expensive call but neccessary to inform user of an important configuration setup. 
+                                throw new IdentityException(e.Errors[i].Message);
+                            }
+                        }
+                    }
+
                     catch (Exception e)
                     {
                         command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
                         command.ExecuteNonQuery();
+
                         throw;
                     }
                     finally

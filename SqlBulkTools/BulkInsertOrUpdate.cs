@@ -147,6 +147,20 @@ namespace SqlBulkTools
                         command.ExecuteNonQuery();
                         
                     }
+
+                    catch (SqlException e)
+                    {
+                        for (int i = 0; i < e.Errors.Count; i++)
+                        {
+                            // Error 8102 is identity error. 
+                            if (e.Errors[i].Number == 8102)
+                            {
+                                // Expensive call but neccessary to inform user of an important configuration setup. 
+                                throw new IdentityException(e.Errors[i].Message);
+                            }
+                        }
+                    }
+
                     catch (Exception ex)
                     {
                         command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
