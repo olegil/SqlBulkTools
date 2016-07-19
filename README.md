@@ -1,7 +1,7 @@
 <img src="http://gregnz.com/images/SqlBulkTools/icon-large.png" alt="SqlBulkTools"> 
 #SqlBulkTools
 -----------------------------
-Bulk operations for C# and MSSQL Server with Fluent API. Supports Bulk Insert, Bulk Update, BulkInsertOrUpdate (Upsert / Merge), Bulk Delete.
+High-performance C# Bulk operations for MSSQL Server. Supports Bulk Insert, Update, Delete & Merge. Uses SQLBulkCopy under the hood.
 
 ##Examples
 
