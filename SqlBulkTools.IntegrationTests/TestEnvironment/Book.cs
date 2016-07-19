@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,10 +11,12 @@ namespace SqlBulkTools.IntegrationTests.TestModel
 {
     public class Book
     {
-        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key, Column(Order = 0)]
         public int Id { get; set; }
 
         [MaxLength(13)]
+        [Key, Column(Order = 1)]
         public string ISBN { get; set; }
 
         [MaxLength(256)]
@@ -26,5 +29,10 @@ namespace SqlBulkTools.IntegrationTests.TestModel
 
         [Required]
         public decimal? Price { get; set; }
+    }
+
+    public class TestTable
+    {
+        public int Id { get; set; }
     }
 }

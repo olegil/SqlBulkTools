@@ -17,5 +17,6 @@ namespace SqlBulkTools.IntegrationTests.TestEnvironment
         }
 
         public virtual DbSet<Book> Books { get; set; }
+        public virtual DbSet<TestTable> TestTable { get; set; }
     }
 }

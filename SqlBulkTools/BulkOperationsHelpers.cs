@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -20,12 +21,16 @@ namespace SqlBulkTools
             Dictionary<string, string> actualColumns = new Dictionary<string, string>();
             Dictionary<string, string> actualColumnsMaxCharLength = new Dictionary<string, string>();
 
+            
             foreach (DataRow row in schema.Rows)
             {
+                //row["TABLE_NAME"];
+                //row["TABLE_SCHEMA"];
                 actualColumns.Add(row["COLUMN_NAME"].ToString(), row["DATA_TYPE"].ToString());
                 actualColumnsMaxCharLength.Add(row["COLUMN_NAME"].ToString(),
                     row["CHARACTER_MAXIMUM_LENGTH"].ToString());
             }
+
 
             StringBuilder command = new StringBuilder();
 
@@ -286,6 +291,12 @@ namespace SqlBulkTools
             bulkcopy.BulkCopyTimeout = bulkCopyTimeout;
         }
 
+        public void ValidateConnection(string connectionName)
+        {
+            if (ConfigurationManager.ConnectionStrings[connectionName] == null)
+                throw new InvalidOperationException("Connection name not found. Recheck your configuration and provide the a valid connection name.");
+        }
+
         /// <summary>
         /// This is used only for the BulkInsert method at this time.  
         /// </summary>
@@ -324,6 +335,9 @@ namespace SqlBulkTools
             restrictions[1] = schema ?? null;
             restrictions[2] = RemoveSchemaFromTable(tableName);
             var dtCols = conn.GetSchema("Columns", restrictions);
+
+            if (dtCols.Rows.Count == 0 && schema != null) throw new InvalidOperationException("Table name " + tableName + " with schema " + schema + " not found. Check your setup and try again.");
+            if (dtCols.Rows.Count == 0) throw new InvalidOperationException("Table name " + tableName + " not found. Check your setup and try again.");
             return dtCols;
         }
     }
