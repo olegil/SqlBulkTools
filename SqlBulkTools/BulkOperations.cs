@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Data.SqlClient;
 
 namespace SqlBulkTools
@@ -15,22 +16,27 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// Commits a transaction to database. A valid setup must exist for operation to be successful. 
+        /// Commits a transaction to database. A valid setup must exist for operation to be 
+        /// successful. Notes(1): The connectionName parameter is a name that you provide to 
+        /// uniquely identify a connection string so that it can be retrieved at run time
         /// </summary>
-        /// <exception cref="connectionString"></exception>
-        /// <exception cref="ITransaction"></exception>
-        /// <param name="connectionString"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="connectionName"></param>
         /// <param name="credentials"></param>
-        public void CommitTransaction(string connectionString, SqlCredential credentials = null)
+        public void CommitTransaction(string connectionName, SqlCredential credentials = null)
         {
-            if (connectionString == null)
-                throw new ArgumentNullException(nameof(connectionString) + " not given");
+            if (connectionName == null)
+                throw new ArgumentNullException(nameof(connectionName) + " not given");
+
+            if (ConfigurationManager.ConnectionStrings[connectionName] == null)
+                throw new InvalidOperationException("Connection name not found. A valid connection name is required for the operation.");
 
             if (_transaction == null)
                 throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
             
 
-            _transaction.CommitTransaction(connectionString, credentials);
+            _transaction.CommitTransaction(connectionName, credentials);
         }
 
         /// <summary>

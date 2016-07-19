@@ -265,7 +265,7 @@ namespace SqlBulkTools.IntegrationTests
                 .MatchTargetOn(x => x.Id, isIdentity: true);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            bulk.CommitTransaction("SqlBulkToolsTest");
+            bulk.CommitTransaction("SqlBulkTogolsTest");
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
 

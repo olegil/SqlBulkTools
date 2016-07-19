@@ -57,7 +57,6 @@ namespace SqlBulkTools
             _helper.DoColumnMappings(_customColumnMappings, _columns, _updateOnList);
 
             ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
-            _helper.ValidateConnection(connectionString);
 
             using (SqlConnection conn = new SqlConnection(ConfigurationManager
                 .ConnectionStrings[connectionString].ConnectionString, credentials))

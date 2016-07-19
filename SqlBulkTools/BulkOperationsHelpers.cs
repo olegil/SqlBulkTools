@@ -291,11 +291,6 @@ namespace SqlBulkTools
             bulkcopy.BulkCopyTimeout = bulkCopyTimeout;
         }
 
-        public void ValidateConnection(string connectionName)
-        {
-            if (ConfigurationManager.ConnectionStrings[connectionName] == null)
-                throw new InvalidOperationException("Connection name not found. Recheck your configuration and provide the a valid connection name.");
-        }
 
         /// <summary>
         /// This is used only for the BulkInsert method at this time.  
