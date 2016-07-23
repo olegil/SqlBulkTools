@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 
 namespace SqlBulkTools
 {
@@ -78,6 +79,64 @@ namespace SqlBulkTools
                                 _bulkCopyNotifyAfter, _bulkCopyTimeout);
 
                             bulkcopy.WriteToServer(dt);
+                            transaction.Commit();
+                            bulkcopy.Close();
+                        }
+
+                        catch (Exception e)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                        finally
+                        {
+                            conn.Close();
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <param name="credentials"></param>
+        /// <returns></returns>
+        public async Task CommitTransactionAsync(string connectionString, SqlCredential credentials = null)
+        {
+            if (_list.Count == 0)
+            {
+                return;
+            }
+
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings);
+
+            // Must be after ToDataTable is called. 
+            _helper.DoColumnMappings(_customColumnMappings, _columns, _updateOnList);
+
+            ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
+
+            using (SqlConnection conn = new SqlConnection(ConfigurationManager
+                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            {
+
+                conn.Open();
+
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    //Bulk insert into temp table
+                    using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
+                    {
+                        try
+                        {
+                            bulkcopy.DestinationTableName = _tableName;
+                            _helper.MapColumns(bulkcopy, _columns, _customColumnMappings);
+
+                            _helper.SetSqlBulkCopySettings(bulkcopy, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
+                                _bulkCopyNotifyAfter, _bulkCopyTimeout);
+
+                            await bulkcopy.WriteToServerAsync(dt);
                             transaction.Commit();
                             bulkcopy.Close();
                         }

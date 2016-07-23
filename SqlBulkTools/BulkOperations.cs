@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Configuration;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 
 namespace SqlBulkTools
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class BulkOperations : ITransaction, IBulkOperations
     {
         private ITransaction _transaction;
@@ -37,6 +41,30 @@ namespace SqlBulkTools
             
 
             _transaction.CommitTransaction(connectionName, credentials);
+        }
+
+        /// <summary>
+        /// Commits a transaction to database. A valid setup must exist for operation to be 
+        /// successful. Notes: (1) The connectionName parameter is a name that you provide to 
+        /// uniquely identify a connection string so that it can be retrieved at run time
+        /// </summary>
+        /// <param name="connectionName"></param>
+        /// <param name="credentials"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task CommitTransactionAsync(string connectionName, SqlCredential credentials = null)
+        {
+            if (connectionName == null)
+                throw new ArgumentNullException(nameof(connectionName) + " not given");
+
+            if (ConfigurationManager.ConnectionStrings[connectionName] == null)
+                throw new InvalidOperationException("Connection name \'" + connectionName + "\' not found. A valid connection name is required for this operation.");
+
+            if (_transaction == null)
+                throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
+
+            await _transaction.CommitTransactionAsync(connectionName, credentials);
         }
 
         /// <summary>

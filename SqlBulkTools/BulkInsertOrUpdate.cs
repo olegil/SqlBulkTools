@@ -4,9 +4,14 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace SqlBulkTools
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class BulkInsertOrUpdate<T> : ITransaction
     {
         private readonly ICollection<T> _list;
@@ -27,6 +32,22 @@ namespace SqlBulkTools
         private readonly BulkOperationsHelpers _helper;
         private bool _deleteWhenNotMatchedFlag;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="tableName"></param>
+        /// <param name="schema"></param>
+        /// <param name="columns"></param>
+        /// <param name="sourceAlias"></param>
+        /// <param name="targetAlias"></param>
+        /// <param name="customColumnMappings"></param>
+        /// <param name="sqlTimeout"></param>
+        /// <param name="bulkCopyTimeout"></param>
+        /// <param name="bulkCopyEnableStreaming"></param>
+        /// <param name="bulkCopyNotifyAfter"></param>
+        /// <param name="bulkCopyBatchSize"></param>
+        /// <param name="ext"></param>
         public BulkInsertOrUpdate(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, string targetAlias, 
             Dictionary<string, string> customColumnMappings, int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, 
             int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, BulkOperations ext)
@@ -99,7 +120,7 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. " +
                                                     "This is usually the primary key of your table but can also be more than one column depending on your business rules.");
             }
-
+           
             DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);
 
             // Must be after ToDataTable is called. 
@@ -163,6 +184,92 @@ namespace SqlBulkTools
                     {
                         command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
                         command.ExecuteNonQuery();
+                        throw;
+                    }
+                    finally
+                    {
+                        conn.Close();
+                    }
+                }
+            }
+        }
+
+        async Task ITransaction.CommitTransactionAsync(string connectionString, SqlCredential credentials = null)
+        {
+            if (_list.Count == 0)
+            {
+                return;
+            }
+
+            if (_matchTargetOn.Count == 0)
+            {
+                throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. " +
+                                                    "This is usually the primary key of your table but can also be more than one column depending on your business rules.");
+            }
+
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);
+
+            // Must be after ToDataTable is called. 
+            _helper.DoColumnMappings(_customColumnMappings, _columns, _matchTargetOn);
+
+            ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
+
+            using (SqlConnection conn = new SqlConnection(ConfigurationManager
+                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            {
+
+                using (SqlCommand command = new SqlCommand("", conn))
+                {
+                    try
+                    {
+                        conn.Open();
+                        var dtCols = _helper.GetSchema(conn, _schema, _tableName);
+
+                        //Creating temp table on database
+                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
+                        await command.ExecuteNonQueryAsync();
+
+                        await _helper.InsertToTmpTableAsync(conn, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout);
+
+                        // Updating destination table, and dropping temp table
+                        command.CommandTimeout = _sqlTimeout;
+                        string comm = "BEGIN TRAN; " +
+                                       "MERGE INTO " + _tableName + " AS Target " +
+                                      "USING #TmpTable AS Source " +
+                                      _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), _sourceAlias, _targetAlias) +
+                                      "WHEN MATCHED THEN " +
+                                      _helper.BuildUpdateSet(_columns, _sourceAlias, _targetAlias, _identityColumn) +
+                                      "WHEN NOT MATCHED BY TARGET THEN " +
+                                      _helper.BuildInsertSet(_columns, _sourceAlias) +
+                                      (_deleteWhenNotMatchedFlag ? " WHEN NOT MATCHED BY SOURCE THEN DELETE; " : "; ") +
+                                      "DROP TABLE #TmpTable; COMMIT TRAN;";
+                        command.CommandText = comm;
+                        await command.ExecuteNonQueryAsync();
+
+                    }
+
+                    catch (SqlException e)
+                    {
+                        for (int i = 0; i < e.Errors.Count; i++)
+                        {
+                            // Error 8102 is identity error. 
+                            if (e.Errors[i].Number == 8102)
+                            {
+                                // Expensive call but neccessary to inform user of an important configuration setup. 
+                                throw new IdentityException(e.Errors[i].Message);
+                            }
+                        }
+
+                        command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
+                        await command.ExecuteNonQueryAsync();
+
+                        throw;
+                    }
+
+                    catch (Exception ex)
+                    {
+                        command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
+                        await command.ExecuteNonQueryAsync();
                         throw;
                     }
                     finally

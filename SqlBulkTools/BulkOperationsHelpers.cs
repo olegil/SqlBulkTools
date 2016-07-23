@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -9,6 +10,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("SqlBulkTools.UnitTests")]
 [assembly: InternalsVisibleTo("SqlBulkTools.IntegrationTests")]
@@ -205,11 +207,11 @@ namespace SqlBulkTools
             return dataTable;
         }
 
+
         /// <summary>
         /// If there are MatchOnColumns that don't exist in columns, add to columns.
         /// </summary>
         /// <param name="columns"></param>
-        /// <param name="MatchOnColumns"></param>
         /// <param name="matchOnColumns"></param>
         /// <returns></returns>
         public HashSet<string> CheckForAdditionalColumns(HashSet<string> columns, List<string> matchOnColumns)
@@ -352,6 +354,38 @@ namespace SqlBulkTools
                             bulkCopyNotifyAfter, bulkCopyTimeout);
 
                         bulkcopy.WriteToServer(dt);
+                        transaction.Commit();
+                        bulkcopy.Close();
+                    }
+                }
+
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                    throw e;
+                }
+
+            }
+        }
+
+        public async Task InsertToTmpTableAsync(SqlConnection conn, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
+        {
+            using (SqlTransaction transaction = conn.BeginTransaction())
+            {
+                try
+                {
+                    //Bulk insert into temp table
+                    using (
+                        SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction)
+                        )
+                    {
+                        bulkcopy.DestinationTableName = "#TmpTable";
+
+                        SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
+                            bulkCopyBatchSize,
+                            bulkCopyNotifyAfter, bulkCopyTimeout);
+
+                        await bulkcopy.WriteToServerAsync(dt);
                         transaction.Commit();
                         bulkcopy.Close();
                     }

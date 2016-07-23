@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace SqlBulkTools
 {
@@ -113,6 +114,75 @@ namespace SqlBulkTools
                     {
                         command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
                         command.ExecuteNonQuery();                        
+                        throw;
+                    }
+                    finally
+                    {
+                        conn.Close();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <param name="credentials"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        async Task ITransaction.CommitTransactionAsync(string connectionString, SqlCredential credentials = null)
+        {
+            if (_list.Count == 0)
+            {
+                return;
+            }
+
+            if (_matchTargetOn.Count == 0)
+            {
+                throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. This is usually the primary key of your table but can also be more than one column depending on your business rules.");
+            }
+
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);
+
+            // Must be after ToDataTable is called. 
+            _helper.DoColumnMappings(_customColumnMappings, _columns);
+
+            ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
+
+            using (SqlConnection conn = new SqlConnection(ConfigurationManager
+                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            {
+                using (SqlCommand command = new SqlCommand("", conn))
+                {
+                    try
+                    {
+                        conn.Open();
+                        var dtCols = _helper.GetSchema(conn, _schema, _tableName);
+
+                        //Creating temp table on database
+                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
+                        await command.ExecuteNonQueryAsync();
+
+                        await _helper.InsertToTmpTableAsync(conn, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout);
+
+                        // Updating destination table, and dropping temp table
+                        command.CommandTimeout = _sqlTimeout;
+                        string comm = "BEGIN TRAN; " +
+                                      "MERGE INTO " + _tableName + " AS Target " +
+                                      "USING #TmpTable AS Source " +
+                                      _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
+                                      _sourceAlias, _targetAlias) +
+                                      "WHEN MATCHED THEN DELETE; " +
+                                      "DROP TABLE #TmpTable; COMMIT TRAN;";
+                        command.CommandText = comm;
+                        await command.ExecuteNonQueryAsync();
+
+                    }
+                    catch (Exception e)
+                    {
+                        command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
+                        await command.ExecuteNonQueryAsync();
                         throw;
                     }
                     finally
