@@ -31,8 +31,4 @@ namespace SqlBulkTools.IntegrationTests.TestModel
         public decimal? Price { get; set; }
     }
 
-    public class TestTable
-    {
-        public int Id { get; set; }
-    }
 }

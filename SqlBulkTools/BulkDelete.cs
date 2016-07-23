@@ -94,34 +94,25 @@ namespace SqlBulkTools
                         command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
                         command.ExecuteNonQuery();
 
-                        //Bulk insert into temp table
-                        using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn))
-                        {
-                            bulkcopy.DestinationTableName = "#TmpTable";
-
-                            _helper.SetSqlBulkCopySettings(bulkcopy, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
-                                _bulkCopyNotifyAfter, _bulkCopyTimeout);
-
-                            bulkcopy.WriteToServer(dt);
-                            bulkcopy.Close();
-                        }
+                        _helper.InsertToTmpTable(conn, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout);
 
                         // Updating destination table, and dropping temp table
                         command.CommandTimeout = _sqlTimeout;
-                        string comm = "BEGIN TRANSACTION; " + 
+                        string comm = "BEGIN TRAN; " + 
                                       "MERGE INTO " + _tableName + " AS Target " +
                                       "USING #TmpTable AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), 
                                       _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN DELETE; " +
-                                      "DROP TABLE #TmpTable; ";
+                                      "DROP TABLE #TmpTable; COMMIT TRAN;";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
+                    
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
                         command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
-                        command.ExecuteNonQuery();
+                        command.ExecuteNonQuery();                        
                         throw;
                     }
                     finally

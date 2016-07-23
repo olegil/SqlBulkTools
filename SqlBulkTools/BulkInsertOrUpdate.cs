@@ -122,19 +122,11 @@ namespace SqlBulkTools
                         command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
                         command.ExecuteNonQuery();
 
-                        using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn))
-                        {
-                            bulkcopy.DestinationTableName = "#TmpTable";
-
-                            _helper.SetSqlBulkCopySettings(bulkcopy, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
-                                _bulkCopyNotifyAfter, _bulkCopyTimeout);
-                            bulkcopy.WriteToServer(dt);
-                            bulkcopy.Close();
-                        }
+                        _helper.InsertToTmpTable(conn, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout);
 
                         // Updating destination table, and dropping temp table
                         command.CommandTimeout = _sqlTimeout; 
-                        string comm = "BEGIN TRANSACTION; " + 
+                        string comm = "BEGIN TRAN; " + 
                                        "MERGE INTO " + _tableName + " AS Target " +
                                       "USING #TmpTable AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), _sourceAlias, _targetAlias) +
@@ -143,7 +135,7 @@ namespace SqlBulkTools
                                       "WHEN NOT MATCHED BY TARGET THEN " +
                                       _helper.BuildInsertSet(_columns, _sourceAlias) + 
                                       (_deleteWhenNotMatchedFlag ? " WHEN NOT MATCHED BY SOURCE THEN DELETE; " : "; ") +
-                                      "DROP TABLE #TmpTable; ";
+                                      "DROP TABLE #TmpTable; COMMIT TRAN;";
                         command.CommandText = comm;                        
                         command.ExecuteNonQuery();
                         

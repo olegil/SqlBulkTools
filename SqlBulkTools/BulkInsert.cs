@@ -67,7 +67,7 @@ namespace SqlBulkTools
                 using (SqlTransaction transaction = conn.BeginTransaction())
                 {
                     //Bulk insert into temp table
-                    using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn))
+                    using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
                     {
                         try
                         {
@@ -85,6 +85,7 @@ namespace SqlBulkTools
                         catch (Exception e)
                         {
                             transaction.Rollback();
+                            throw e;
                         }
                         finally
                         {

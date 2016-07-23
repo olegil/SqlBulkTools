@@ -24,8 +24,6 @@ namespace SqlBulkTools
             
             foreach (DataRow row in schema.Rows)
             {
-                //row["TABLE_NAME"];
-                //row["TABLE_SCHEMA"];
                 actualColumns.Add(row["COLUMN_NAME"].ToString(), row["DATA_TYPE"].ToString());
                 actualColumnsMaxCharLength.Add(row["COLUMN_NAME"].ToString(),
                     row["CHARACTER_MAXIMUM_LENGTH"].ToString());
@@ -34,7 +32,7 @@ namespace SqlBulkTools
 
             StringBuilder command = new StringBuilder();
 
-            command.Append("CREATE TABLE #TmpTable(");
+            command.Append("BEGIN TRAN; CREATE TABLE #TmpTable(");
 
             List<string> paramList = new List<string>();
 
@@ -62,7 +60,7 @@ namespace SqlBulkTools
             string paramListConcatenated = string.Join(", ", paramList);
 
             command.Append(paramListConcatenated);
-            command.Append(")");
+            command.Append("); COMMIT TRAN;");
 
             return command.ToString();
         }
@@ -334,6 +332,38 @@ namespace SqlBulkTools
             if (dtCols.Rows.Count == 0 && schema != null) throw new InvalidOperationException("Table name " + tableName + " with schema " + schema + " not found. Check your setup and try again.");
             if (dtCols.Rows.Count == 0) throw new InvalidOperationException("Table name " + tableName + " not found. Check your setup and try again.");
             return dtCols;
+        }
+
+        public void InsertToTmpTable(SqlConnection conn, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
+        {
+            using (SqlTransaction transaction = conn.BeginTransaction())
+            {
+                try
+                {
+                    //Bulk insert into temp table
+                    using (
+                        SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction)
+                        )
+                    {
+                        bulkcopy.DestinationTableName = "#TmpTable";
+
+                        SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
+                            bulkCopyBatchSize,
+                            bulkCopyNotifyAfter, bulkCopyTimeout);
+
+                        bulkcopy.WriteToServer(dt);
+                        transaction.Commit();
+                        bulkcopy.Close();
+                    }
+                }
+
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                    throw e;
+                }
+
+            }
         }
     }
 }
