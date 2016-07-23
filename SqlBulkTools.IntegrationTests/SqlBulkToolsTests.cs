@@ -28,7 +28,6 @@ namespace SqlBulkTools.IntegrationTests
             _randomizer = new BookRandomizer();
             Database.SetInitializer(new DropCreateDatabaseAlways<TestContext>());
             DeleteLogFile();
-            CleanupDatabase();
         }
 
         [TestCase(500)]
@@ -52,8 +51,6 @@ namespace SqlBulkTools.IntegrationTests
             AppendToLogFile("Average result (" + RepeatTimes + " iterations): " + avg.ToString("#.##") + " ms\n\n");
 
             Assert.AreEqual(rows * RepeatTimes, _db.Books.Count());
-
-            CleanupDatabase();
         }
 
         [TestCase(450, 50)]
@@ -70,7 +67,6 @@ namespace SqlBulkTools.IntegrationTests
 
             for (int i = 0; i < RepeatTimes; i++)
             {
-                CleanupDatabase();
                 BulkInsert(_bookCollection);
 
                 // Update some rows
@@ -153,7 +149,6 @@ namespace SqlBulkTools.IntegrationTests
         {
             var fixture = new Fixture();
             _bookCollection = _randomizer.GetRandomCollection(rows);
-            CleanupDatabase();
 
             List<long> results = new List<long>();
 
@@ -169,36 +164,6 @@ namespace SqlBulkTools.IntegrationTests
             double avg = results.Average(l => l);
             AppendToLogFile("Average result (" + RepeatTimes + " iterations): " + avg.ToString("#.##") + " ms\n\n");
 
-        }
-
-
-        private void CleanupDatabase()
-        {
-            int recordCount = _db.Books.Count();
-
-            BookDto[] col = GetBookDtoCol(recordCount);
-
-            BulkOperations bulk = new BulkOperations();
-            bulk.Setup<BookDto>(x => x.ForCollection(col))
-                .WithTable("Books")
-                .AddColumn(x => x.Id)
-                .BulkDelete()
-                .MatchTargetOn(x => x.Id);
-            bulk.CommitTransaction("SqlBulkToolsTest");
-        }
-
-        private BookDto[] GetBookDtoCol(int recordCount)
-        {
-            BookDto[] bookDtoCol = new BookDto[recordCount];
-
-            
-            for (int i = 0; i < recordCount; i++)
-            {
-                // Identity starts from 1 not 0
-                bookDtoCol[i] = new BookDto() { Id = i + 1 };
-            }
-
-            return bookDtoCol;
         }
 
         private void AppendToLogFile(string text)
