@@ -11,7 +11,7 @@ using TestContext = SqlBulkTools.IntegrationTests.TestEnvironment.TestContext;
 namespace SqlBulkTools.IntegrationTests
 {
     [TestFixture]
-    class SqlBulkToolsTests
+    class SqlBulkToolsIT
     {
 
         private const string LogResultsLocation = @"C:\SqlBulkTools_Log.txt";
