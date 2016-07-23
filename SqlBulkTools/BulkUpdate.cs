@@ -138,6 +138,10 @@ namespace SqlBulkTools
                                 throw new IdentityException(e.Errors[i].Message);
                             }
                         }
+
+                        command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
+                        command.ExecuteNonQuery();
+                        throw;
                     }
 
                     catch (Exception e)

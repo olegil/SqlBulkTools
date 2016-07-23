@@ -95,6 +95,8 @@ namespace SqlBulkTools.IntegrationTests
                       
         }
 
+        
+
         [TestCase(500)]
         [TestCase(1000)]
         [TestCase(2000)]
@@ -139,6 +141,42 @@ namespace SqlBulkTools.IntegrationTests
             }
             double avg = results.Average(l => l);
             AppendToLogFile("Average result (" + RepeatTimes + " iterations): " + avg.ToString("#.##") + " ms\n\n");
+
+        }
+
+        [Test]
+        public void Transaction_Rollsback_OnError()
+        {
+            BulkDelete(_db.Books.ToList());
+
+            var fixture = new Fixture();
+            fixture.Customizations.Add(new PriceBuilder());
+            fixture.Customizations.Add(new IsbnBuilder());
+            fixture.Customizations.Add(new TitleBuilder());
+
+            _bookCollection = _randomizer.GetRandomCollection(20);
+            BulkInsert(_bookCollection);
+
+            var prevBook = _bookCollection[0];
+
+            var newBook = fixture.Build<Book>().Without(s => s.Id).Without(s => s.ISBN).Create();
+            var prevIsbn = _bookCollection[0].ISBN;
+            _bookCollection[0] = newBook;
+            _bookCollection[0].ISBN = prevIsbn;
+
+            _bookCollection.ElementAt(10).Price = null; // Price is required
+
+            try
+            {
+                BulkUpdate(_bookCollection);
+            }
+            catch
+            {
+                var firstElement = _db.Books.FirstOrDefault();
+                Assert.AreEqual(firstElement.Price, prevBook.Price);
+                Assert.AreEqual(firstElement.Title, prevBook.Title);
+            }
+            
 
         }
 

@@ -85,7 +85,7 @@ namespace SqlBulkTools
                         catch (Exception e)
                         {
                             transaction.Rollback();
-                            throw e;
+                            throw;
                         }
                         finally
                         {
