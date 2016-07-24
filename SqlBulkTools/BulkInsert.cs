@@ -24,6 +24,21 @@ namespace SqlBulkTools
         private readonly int? _bulkCopyNotifyAfter;
         private readonly int? _bulkCopyBatchSize;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="tableName"></param>
+        /// <param name="schema"></param>
+        /// <param name="columns"></param>
+        /// <param name="sourceAlias"></param>
+        /// <param name="targetAlias"></param>
+        /// <param name="customColumnMappings"></param>
+        /// <param name="bulkCopyTimeout"></param>
+        /// <param name="bulkCopyEnableStreaming"></param>
+        /// <param name="bulkCopyNotifyAfter"></param>
+        /// <param name="bulkCopyBatchSize"></param>
+        /// <param name="ext"></param>
         public BulkInsert(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias,
             string targetAlias, Dictionary<string, string> customColumnMappings, int bulkCopyTimeout, bool bulkCopyEnableStreaming,
             int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, BulkOperations ext)
@@ -45,7 +60,7 @@ namespace SqlBulkTools
             _ext.SetBulkExt(this);
         }
 
-        void ITransaction.CommitTransaction(string connectionString, SqlCredential credentials)
+        void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             if (_list.Count == 0)
             {
@@ -59,8 +74,7 @@ namespace SqlBulkTools
 
             ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
-            using (SqlConnection conn = new SqlConnection(ConfigurationManager
-                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
 
                 conn.Open();
@@ -100,10 +114,11 @@ namespace SqlBulkTools
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="connectionString"></param>
+        /// <param name="connectionName"></param>
         /// <param name="credentials"></param>
+        /// <param name="connection"></param>
         /// <returns></returns>
-        public async Task CommitTransactionAsync(string connectionString, SqlCredential credentials = null)
+        async Task ITransaction.CommitTransactionAsync(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             if (_list.Count == 0)
             {
@@ -117,8 +132,7 @@ namespace SqlBulkTools
 
             ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
-            using (SqlConnection conn = new SqlConnection(ConfigurationManager
-                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
 
                 conn.Open();

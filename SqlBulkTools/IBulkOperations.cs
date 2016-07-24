@@ -6,6 +6,8 @@ namespace SqlBulkTools
 {
     public interface IBulkOperations
     {
+        void CommitTransaction(SqlConnection connection);
+        Task CommitTransactionAsync(SqlConnection connection);
         void CommitTransaction(string connectionName, SqlCredential credentials = null);
         Task CommitTransactionAsync(string connectionName, SqlCredential credentials = null);
         CollectionSelect<T> Setup<T>(Func<Setup<T>, CollectionSelect<T>> list);

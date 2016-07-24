@@ -8,7 +8,7 @@ namespace SqlBulkTools
     /// <summary>
     /// 
     /// </summary>
-    public class BulkOperations : ITransaction, IBulkOperations
+    public class BulkOperations : IBulkOperations
     {
         private ITransaction _transaction;
         private const string SourceAlias = "Source";
@@ -65,6 +65,46 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
 
             await _transaction.CommitTransactionAsync(connectionName, credentials);
+        }
+
+
+        /// <summary>
+        /// Commits a transaction to database. A valid setup must exist for operation to be 
+        /// successful. Notes: (1) The connectionName parameter is a name that you provide to 
+        /// uniquely identify a connection string so that it can be retrieved at run time
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public void CommitTransaction(SqlConnection connection)
+        {
+            if (connection == null)
+                throw new ArgumentNullException(nameof(connection));
+
+            if (_transaction == null)
+                throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
+
+            _transaction.CommitTransaction(connection : connection);
+
+        }
+
+
+        /// <summary>
+        ///         /// Commits a transaction to database. A valid setup must exist for operation to be 
+        /// successful. Notes: (1) The connectionName parameter is a name that you provide to 
+        /// uniquely identify a connection string so that it can be retrieved at run time        /// </summary>
+        /// <param name="connection"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task CommitTransactionAsync(SqlConnection connection)
+        {
+            if (connection == null)
+                throw new ArgumentNullException(nameof(connection));
+
+            if (_transaction == null)
+                throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
+
+            await _transaction.CommitTransactionAsync(connection : connection);
         }
 
         /// <summary>

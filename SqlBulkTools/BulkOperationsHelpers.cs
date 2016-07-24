@@ -207,6 +207,26 @@ namespace SqlBulkTools
             return dataTable;
         }
 
+        public SqlConnection GetSqlConnection(string connectionName, SqlCredential credentials, SqlConnection connection)
+        {
+            SqlConnection conn = null;
+
+            if (connection != null)
+            {
+                conn = connection;
+                return conn;
+            }
+
+            if (connectionName != null)
+            {
+                conn = new SqlConnection(ConfigurationManager
+                    .ConnectionStrings[connectionName].ConnectionString, credentials);
+                return conn;
+            }
+
+            throw new InvalidOperationException("Could not create SQL Connection");
+        }
+
 
         /// <summary>
         /// If there are MatchOnColumns that don't exist in columns, add to columns.

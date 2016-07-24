@@ -108,7 +108,7 @@ namespace SqlBulkTools
             return this;
         }
 
-        void ITransaction.CommitTransaction(string connectionString, SqlCredential credentials)
+        void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             if (_list.Count == 0)
             {
@@ -128,8 +128,7 @@ namespace SqlBulkTools
 
             ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
-            using (SqlConnection conn = new SqlConnection(ConfigurationManager
-                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
 
                 using (SqlCommand command = new SqlCommand("", conn))
@@ -194,7 +193,7 @@ namespace SqlBulkTools
             }
         }
 
-        async Task ITransaction.CommitTransactionAsync(string connectionString, SqlCredential credentials = null)
+        async Task ITransaction.CommitTransactionAsync(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             if (_list.Count == 0)
             {
@@ -214,8 +213,7 @@ namespace SqlBulkTools
 
             ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
-            using (SqlConnection conn = new SqlConnection(ConfigurationManager
-                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
 
                 using (SqlCommand command = new SqlCommand("", conn))

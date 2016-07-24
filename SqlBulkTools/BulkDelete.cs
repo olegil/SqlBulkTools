@@ -26,6 +26,22 @@ namespace SqlBulkTools
         private readonly int? _bulkCopyBatchSize;
         private readonly BulkOperations _ext;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="tableName"></param>
+        /// <param name="schema"></param>
+        /// <param name="columns"></param>
+        /// <param name="sourceAlias"></param>
+        /// <param name="targetAlias"></param>
+        /// <param name="customColumnMappings"></param>
+        /// <param name="sqlTimeout"></param>
+        /// <param name="bulkCopyTimeout"></param>
+        /// <param name="bulkCopyEnableStreaming"></param>
+        /// <param name="bulkCopyNotifyAfter"></param>
+        /// <param name="bulkCopyBatchSize"></param>
+        /// <param name="ext"></param>
         public BulkDelete(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, 
             string targetAlias, Dictionary<string, string> customColumnMappings, int sqlTimeout, int bulkCopyTimeout, 
             bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, BulkOperations ext)
@@ -62,7 +78,7 @@ namespace SqlBulkTools
             return this;
         }
 
-        void ITransaction.CommitTransaction(string connectionString, SqlCredential credentials )
+        void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             if (_list.Count == 0)
             {
@@ -78,11 +94,9 @@ namespace SqlBulkTools
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns);
-
             ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
-            using (SqlConnection conn = new SqlConnection(ConfigurationManager
-                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
                 using (SqlCommand command = new SqlCommand("", conn))
                 {
@@ -131,7 +145,7 @@ namespace SqlBulkTools
         /// <param name="credentials"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        async Task ITransaction.CommitTransactionAsync(string connectionString, SqlCredential credentials = null)
+        async Task ITransaction.CommitTransactionAsync(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             if (_list.Count == 0)
             {
@@ -150,8 +164,7 @@ namespace SqlBulkTools
 
             ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
-            using (SqlConnection conn = new SqlConnection(ConfigurationManager
-                .ConnectionStrings[connectionString].ConnectionString, credentials))
+            using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
                 using (SqlCommand command = new SqlCommand("", conn))
                 {

@@ -4,6 +4,10 @@ using System.Linq.Expressions;
 
 namespace SqlBulkTools
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class ColumnSelect<T>
     {
         private readonly ICollection<T> _list;
@@ -22,6 +26,21 @@ namespace SqlBulkTools
         private readonly HashSet<string> _columns;
         
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="tableName"></param>
+        /// <param name="columns"></param>
+        /// <param name="schema"></param>
+        /// <param name="sourceAlias"></param>
+        /// <param name="targetAlias"></param>
+        /// <param name="sqlTimeout"></param>
+        /// <param name="bulkCopyTimeout"></param>
+        /// <param name="bulkCopyEnableStreaming"></param>
+        /// <param name="bulkCopyNotifyAfter"></param>
+        /// <param name="bulkCopyBatchSize"></param>
+        /// <param name="ext"></param>
         public ColumnSelect(ICollection<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias, 
             int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, 
             BulkOperations ext)

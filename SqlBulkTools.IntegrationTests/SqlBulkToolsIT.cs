@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -383,7 +384,7 @@ namespace SqlBulkTools.IntegrationTests
                 .AddColumn(x => x.PublishDate)
                 .BulkInsert();
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            bulk.CommitTransaction("SqlBulkToolsTest");
+            bulk.CommitTransaction(new SqlConnection("Data Source=DESKTOP-6I9FL7M;Initial Catalog=SqlBulkTools;Integrated Security=True;Pooling=false"));
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             return elapsedMs;
