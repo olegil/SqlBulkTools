@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AllColumnSelect.cs" />
     <Compile Include="BulkDelete.cs" />
     <Compile Include="BulkInsert.cs" />
     <Compile Include="BulkInsertOrUpdate.cs" />

@@ -4,12 +4,12 @@ namespace SqlBulkTools
 {
     public class CollectionSelect<T>
     {
-        private readonly ICollection<T> _list;
+        private readonly IEnumerable<T> _list;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
         private readonly BulkOperations _ext;
 
-        public CollectionSelect(ICollection<T> list, string sourceAlias, string targetAlias, BulkOperations ext)
+        public CollectionSelect(IEnumerable<T> list, string sourceAlias, string targetAlias, BulkOperations ext)
         {
             _list = list;
             _sourceAlias = sourceAlias;

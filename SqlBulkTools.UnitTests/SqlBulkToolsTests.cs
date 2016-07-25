@@ -10,7 +10,7 @@ namespace SqlBulkTools.UnitTests
         [TestCase("[api].[dbo].MyTableName", "MyTableName")]
         [TestCase("[dbo].MyTableName", "MyTableName")]
         [TestCase("MyTableName", "MyTableName")]
-        public void BulkExtHelpers_RemoveSchemaFromTable_RemovesSchema(string tableName, string expectedResult)
+        public void BulkOperationsHelpers_RemoveSchemaFromTable_RemovesSchema(string tableName, string expectedResult)
         {
             // Arrange
             var sut = new BulkOperationsHelpers();
@@ -23,7 +23,7 @@ namespace SqlBulkTools.UnitTests
         }
 
         [Test]
-        public void BulkExtHelpers_BuildJoinConditionsForUpdateOrInsertWithThreeConditions()
+        public void BulkOperationsHelpers_BuildJoinConditionsForUpdateOrInsertWithThreeConditions()
         {
             // Arrange
             List<string> joinOnList = new List<string>() { "MarketPlaceId", "FK_BusinessId", "AddressId" };
@@ -37,7 +37,7 @@ namespace SqlBulkTools.UnitTests
         }
 
         [Test]
-        public void BulkExtHelpers_BuildJoinConditionsForUpdateOrInsertWithTwoConditions()
+        public void BulkOperationsHelpers_BuildJoinConditionsForUpdateOrInsertWithTwoConditions()
         {
             // Arrange
             List<string> joinOnList = new List<string>() { "MarketPlaceId", "FK_BusinessId" };
@@ -51,7 +51,7 @@ namespace SqlBulkTools.UnitTests
         }
 
         [Test]
-        public void BulkExtHelpers_BuildJoinConditionsForUpdateOrInsertWitSingleCondition()
+        public void BulkOperationsHelpers_BuildJoinConditionsForUpdateOrInsertWitSingleCondition()
         {
             // Arrange
             List<string> joinOnList = new List<string>() { "MarketPlaceId" };
@@ -65,7 +65,7 @@ namespace SqlBulkTools.UnitTests
         }
 
         [Test]
-        public void BulkExtHelpers_BuildUpdateSet_BuildsCorrectSequenceForMultipleColumns()
+        public void BulkOperationsHelpers_BuildUpdateSet_BuildsCorrectSequenceForMultipleColumns()
         {
             // Arrange
             var updateOrInsertColumns = GetTestParameters();
@@ -82,7 +82,7 @@ namespace SqlBulkTools.UnitTests
         }
 
         [Test]
-        public void BulkExtHelpers_BuildUpdateSet_BuildsCorrectSequenceForSingleColumn()
+        public void BulkOperationsHelpers_BuildUpdateSet_BuildsCorrectSequenceForSingleColumn()
         {
             // Arrange
             var updateOrInsertColumns = new HashSet<string>();
@@ -101,7 +101,7 @@ namespace SqlBulkTools.UnitTests
         }
 
         [Test]
-        public void BulkExtHelpers_BuildInsertSet_BuildsCorrectSequenceForMultipleColumns()
+        public void BulkOperationsHelpers_BuildInsertSet_BuildsCorrectSequenceForMultipleColumns()
         {
             // Arrange
             var updateOrInsertColumns = GetTestParameters();
@@ -118,7 +118,7 @@ namespace SqlBulkTools.UnitTests
         }
 
         [Test]
-        public void BulkExtHelpers_BuildInsertSet_BuildsCorrectSequenceForSingleColumn()
+        public void BulkOperationsHelpers_BuildInsertSet_BuildsCorrectSequenceForSingleColumn()
         {
             // Arrange
             var updateOrInsertColumns = new HashSet<string>();
@@ -133,6 +133,20 @@ namespace SqlBulkTools.UnitTests
             // Assert
             Assert.AreEqual(expected, result);
 
+        }
+
+        [Test]
+        public void BulkOperationsHelpers_GetAllValueTypeAndStringColumns_ReturnsCorrectSet()
+        {
+            // Arrange
+            BulkOperationsHelpers helper = new BulkOperationsHelpers();
+            HashSet<string> expected = new HashSet<string>() {"Title", "CreatedTime", "BoolTest", "IntegerTest", "Price"};
+
+            // Act
+            var result = helper.GetAllValueTypeAndStringColumns(typeof (ModelWithMixedTypes));
+
+            // Assert
+            CollectionAssert.AreEqual(expected, result);
         }
 
         private HashSet<string> GetTestParameters()

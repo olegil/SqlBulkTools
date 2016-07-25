@@ -20,7 +20,7 @@ namespace SqlBulkTools
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
-        public CollectionSelect<T> ForCollection(ICollection<T> list)
+        public CollectionSelect<T> ForCollection(IEnumerable<T> list)
         {
             return new CollectionSelect<T>(list, _sourceAlias, _targetAlias, _ext);
         }

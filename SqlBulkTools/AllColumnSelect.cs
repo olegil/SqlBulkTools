@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SqlBulkTools
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class ColumnSelect<T>
+    public class AllColumnSelect<T>
     {
         private readonly IEnumerable<T> _list;
         private readonly string _tableName;
@@ -24,7 +23,7 @@ namespace SqlBulkTools
         private Dictionary<string, string> CustomColumnMappings { get; set; }
         private readonly BulkOperationsHelpers _helper;
         private readonly HashSet<string> _columns;
-        
+
 
         /// <summary>
         /// 
@@ -41,8 +40,8 @@ namespace SqlBulkTools
         /// <param name="bulkCopyNotifyAfter"></param>
         /// <param name="bulkCopyBatchSize"></param>
         /// <param name="ext"></param>
-        public ColumnSelect(IEnumerable<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias, 
-            int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, 
+        public AllColumnSelect(IEnumerable<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias,
+            int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize,
             BulkOperations ext)
         {
             _helper = new BulkOperationsHelpers();
@@ -61,20 +60,6 @@ namespace SqlBulkTools
             CustomColumnMappings = new Dictionary<string, string>();
         }
 
-
-        /// <summary>
-        /// Add each column that you want to include in the query. Only include the columns that are relevant to the procedure for best performance. 
-        /// </summary>
-        /// <param name="columnName">Column name as represented in database</param>
-        /// <param name="isIdentity"></param>
-        /// <returns></returns>
-        public ColumnSelect<T> AddColumn(Expression<Func<T, object>> columnName)
-        {
-            var propertyName = _helper.GetPropertyName(columnName);
-            _columns.Add(propertyName);
-            return this;
-        }
-
         /// <summary>
         /// By default SqlBulkTools will attempt to match the model property names to SQL column names (case insensitive). 
         /// If any of your model property names do not match 
@@ -87,7 +72,7 @@ namespace SqlBulkTools
         /// The actual name of column as represented in SQL table. 
         /// </param>
         /// <returns></returns>
-        public ColumnSelect<T> CustomColumnMapping(Expression<Func<T, object>> source, string destination)
+        public AllColumnSelect<T> CustomColumnMapping(Expression<Func<T, object>> source, string destination)
         {
             var propertyName = _helper.GetPropertyName(source);
             CustomColumnMappings.Add(propertyName, destination);
@@ -103,8 +88,8 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkInsert<T> BulkInsert()
         {
-            return new BulkInsert<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, 
-                CustomColumnMappings, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
+            return new BulkInsert<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias,
+                CustomColumnMappings, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter,
                 _bulkCopyBatchSize, _ext);
         }
 
@@ -118,7 +103,7 @@ namespace SqlBulkTools
         public BulkInsertOrUpdate<T> BulkInsertOrUpdate()
         {
             return new BulkInsertOrUpdate<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias,
-                CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
+                CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter,
                 _bulkCopyBatchSize, _ext);
         }
 
@@ -129,8 +114,8 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkUpdate<T> BulkUpdate()
         {
-            return new BulkUpdate<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, 
-                CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
+            return new BulkUpdate<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias,
+                CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter,
                 _bulkCopyBatchSize, _ext);
         }
 
@@ -142,9 +127,8 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkDelete<T> BulkDelete()
         {
-            return new BulkDelete<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, CustomColumnMappings, 
+            return new BulkDelete<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, CustomColumnMappings,
                 _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, _bulkCopyBatchSize, _ext);
-        } 
-
+        }
     }
 }

@@ -336,6 +336,26 @@ namespace SqlBulkTools
 
         }
 
+        public HashSet<string> GetAllValueTypeAndStringColumns(Type type)
+        {
+            HashSet<string> columns = new HashSet<string>();
+
+            //Get all the properties
+            PropertyInfo[] props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            for (int i = 0; i < props.Length; i++)
+            {
+                var type2 = props[i].GetType();
+                if (props[i].PropertyType.IsValueType || props[i].PropertyType == typeof(string))
+                {
+                    columns.Add(props[i].Name);
+                }
+            }
+
+            return columns;
+
+        }
+
         /// <summary>
         /// Gets schema information for a table. Used to get SQL type of property. 
         /// </summary>

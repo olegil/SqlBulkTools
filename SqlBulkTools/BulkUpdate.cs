@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace SqlBulkTools
     /// <typeparam name="T"></typeparam>
     public class BulkUpdate<T> : ITransaction
     {
-        private readonly ICollection<T> _list;
+        private readonly IEnumerable<T> _list;
         private readonly string _tableName;
         private readonly string _schema;
         private readonly HashSet<string> _columns;
@@ -47,7 +48,7 @@ namespace SqlBulkTools
         /// <param name="bulkCopyNotifyAfter"></param>
         /// <param name="bulkCopyBatchSize"></param>
         /// <param name="ext"></param>
-        public BulkUpdate(ICollection<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, string targetAlias, 
+        public BulkUpdate(IEnumerable<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, string targetAlias, 
             Dictionary<string, string> customColumnMappings, int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, 
             int? bulkCopyBatchSize, BulkOperations ext)
         {
@@ -97,7 +98,7 @@ namespace SqlBulkTools
 
         void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
-            if (_list.Count == 0)
+            if (!_list.Any())
             {
                 return;
             }
@@ -180,7 +181,7 @@ namespace SqlBulkTools
 
         async Task ITransaction.CommitTransactionAsync(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
-            if (_list.Count == 0)
+            if (!_list.Any())
             {
                 return;
             }

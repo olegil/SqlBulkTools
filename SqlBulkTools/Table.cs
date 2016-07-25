@@ -15,7 +15,7 @@ namespace SqlBulkTools
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
         private readonly BulkOperations _ext;
-        private readonly ICollection<T> _list;
+        private readonly IEnumerable<T> _list;
         private Dictionary<string, string> CustomColumnMappings { get; set; }
         private int _sqlTimeout;
         private int _bulkCopyTimeout;
@@ -23,7 +23,7 @@ namespace SqlBulkTools
         private int? _bulkCopyNotifyAfter;
         private int? _bulkCopyBatchSize;
 
-        public Table(ICollection<T> list, string tableName, string sourceAlias, string targetAlias, BulkOperations ext)
+        public Table(IEnumerable<T> list, string tableName, string sourceAlias, string targetAlias, BulkOperations ext)
         {
             _bulkCopyBatchSize = null;
             _bulkCopyNotifyAfter = null;
@@ -54,6 +54,17 @@ namespace SqlBulkTools
             var propertyName = _helper.GetPropertyName(columnName);
             Columns.Add(propertyName);
             return new ColumnSelect<T>(_list, _tableName, Columns, _schema, _sourceAlias, _targetAlias, 
+                _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, _bulkCopyBatchSize, _ext);
+        }
+
+        /// <summary>
+        /// Adds all properties in model that are either value type of string type. 
+        /// </summary>
+        /// <returns></returns>
+        public AllColumnSelect<T> AddAllColumns()
+        {
+            Columns = _helper.GetAllValueTypeAndStringColumns(typeof(T));
+            return new AllColumnSelect<T>(_list, _tableName, Columns, _schema, _sourceAlias, _targetAlias,
                 _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, _bulkCopyBatchSize, _ext);
         }
 
