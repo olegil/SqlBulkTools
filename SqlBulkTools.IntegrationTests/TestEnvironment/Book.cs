@@ -12,14 +12,14 @@ namespace SqlBulkTools.IntegrationTests.TestModel
     public class Book
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Key, Column(Order = 0)]
+        [Key]
         public int Id { get; set; }
 
         [MaxLength(13)]
-        [Key, Column(Order = 1)]
         public string ISBN { get; set; }
 
         [MaxLength(256)]
+        [Index]
         public string Title { get; set; }
 
         [MaxLength(2000)]
@@ -28,6 +28,7 @@ namespace SqlBulkTools.IntegrationTests.TestModel
         public DateTime? PublishDate { get; set; }
 
         [Required]
+        [Index]
         public decimal? Price { get; set; }
     }
 

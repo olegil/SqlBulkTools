@@ -33,7 +33,7 @@ namespace SqlBulkTools.IntegrationTests
         }
 
         [TestCase(500)]
-        [TestCase(1000)]
+        [TestCase(100000)]
         public void SqlBulkTools_BulkInsert(int rows)
         {
             BulkDelete(_db.Books.ToList());
@@ -55,7 +55,7 @@ namespace SqlBulkTools.IntegrationTests
         }
 
         [TestCase(500)]
-        [TestCase(1000)]
+        [TestCase(100000)]
         public void SqlBulkTools_BulkInsert_WithAllColumns(int rows)
         {
             BulkDelete(_db.Books.ToList());
@@ -443,7 +443,8 @@ namespace SqlBulkTools.IntegrationTests
                 .AddColumn(x => x.Description)
                 .AddColumn(x => x.ISBN)
                 .AddColumn(x => x.PublishDate)
-                .BulkInsert();
+                .BulkInsert()
+                .TmpDisableAllNonClusteredIndexes();
             var watch = System.Diagnostics.Stopwatch.StartNew();
             bulk.CommitTransaction(new SqlConnection("Data Source=DESKTOP-6I9FL7M;Initial Catalog=SqlBulkTools;Integrated Security=True;Pooling=false"));
             watch.Stop();

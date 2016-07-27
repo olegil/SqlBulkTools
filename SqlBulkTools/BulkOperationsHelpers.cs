@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -15,7 +14,7 @@ using System.Threading.Tasks;
 [assembly: InternalsVisibleTo("SqlBulkTools.UnitTests")]
 [assembly: InternalsVisibleTo("SqlBulkTools.IntegrationTests")]
 namespace SqlBulkTools
-{   
+{
     internal class BulkOperationsHelpers
     {
         public string BuildCreateTempTable(HashSet<string> columns, DataTable schema)
@@ -23,7 +22,7 @@ namespace SqlBulkTools
             Dictionary<string, string> actualColumns = new Dictionary<string, string>();
             Dictionary<string, string> actualColumnsMaxCharLength = new Dictionary<string, string>();
 
-            
+
             foreach (DataRow row in schema.Rows)
             {
                 actualColumns.Add(row["COLUMN_NAME"].ToString(), row["DATA_TYPE"].ToString());
@@ -110,7 +109,7 @@ namespace SqlBulkTools
                 if (identityColumn != null && column != identityColumn || identityColumn == null)
                 {
                     paramsSeparated.Add(targetAlias + "." + column + " = " + sourceAlias + "." + column);
-                }             
+                }
             }
 
             command.Append(string.Join(", ", paramsSeparated) + " ");
@@ -356,6 +355,32 @@ namespace SqlBulkTools
 
         }
 
+        public string GetIndexManagementCmd(string action, string table, HashSet<string> disableIndexList, bool disableAllIndexes = false)
+        {
+            //AND sys.objects.name = 'Books' AND sys.indexes.name = 'IX_Title'
+            StringBuilder sb = new StringBuilder();
+
+            if (disableIndexList != null && disableIndexList.Any())
+            {
+                foreach (var index in disableIndexList)
+                {
+                    sb.Append(" AND sys.indexes.name = \'");
+                    sb.Append(index);
+                    sb.Append("\'");
+                }
+            }
+
+            string cmd = "DECLARE @sql AS VARCHAR(MAX)=''; " +
+                                "SELECT @sql = @sql + " +
+                                "'ALTER INDEX ' + sys.indexes.name + ' ON ' + sys.objects.name + ' " + action + ";'" +
+                                "FROM sys.indexes JOIN sys.objects ON sys.indexes.object_id = sys.objects.object_id " +
+                                "WHERE sys.indexes.type_desc = 'NONCLUSTERED' " +
+                                "AND sys.objects.type_desc = 'USER_TABLE'" + 
+                                " AND sys.objects.name = '" + table + "'" + (sb.Length > 0 ? sb.ToString() : "") + "; EXEC(@sql);";
+
+            return cmd;
+        }
+
         /// <summary>
         /// Gets schema information for a table. Used to get SQL type of property. 
         /// </summary>
@@ -376,68 +401,38 @@ namespace SqlBulkTools
             return dtCols;
         }
 
-        public void InsertToTmpTable(SqlConnection conn, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
+        public void InsertToTmpTable(SqlConnection conn, SqlTransaction transaction, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
         {
-            using (SqlTransaction transaction = conn.BeginTransaction())
+            using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
             {
-                try
-                {
-                    //Bulk insert into temp table
-                    using (
-                        SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction)
-                        )
-                    {
-                        bulkcopy.DestinationTableName = "#TmpTable";
+                bulkcopy.DestinationTableName = "#TmpTable";
 
-                        SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
-                            bulkCopyBatchSize,
-                            bulkCopyNotifyAfter, bulkCopyTimeout);
+                SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
+                    bulkCopyBatchSize,
+                    bulkCopyNotifyAfter, bulkCopyTimeout);
 
-                        bulkcopy.WriteToServer(dt);
-                        transaction.Commit();
-                        bulkcopy.Close();
-                    }
-                }
-
-                catch (Exception e)
-                {
-                    transaction.Rollback();
-                    throw e;
-                }
-
+                bulkcopy.WriteToServer(dt);
             }
         }
 
-        public async Task InsertToTmpTableAsync(SqlConnection conn, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
+        public async Task InsertToTmpTableAsync(SqlConnection conn, SqlTransaction transaction, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
         {
-            using (SqlTransaction transaction = conn.BeginTransaction())
+            using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
             {
-                try
-                {
-                    //Bulk insert into temp table
-                    using (
-                        SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction)
-                        )
-                    {
-                        bulkcopy.DestinationTableName = "#TmpTable";
+                bulkcopy.DestinationTableName = "#TmpTable";
 
-                        SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
-                            bulkCopyBatchSize,
-                            bulkCopyNotifyAfter, bulkCopyTimeout);
+                SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
+                    bulkCopyBatchSize,
+                    bulkCopyNotifyAfter, bulkCopyTimeout);
 
-                        await bulkcopy.WriteToServerAsync(dt);
-                        transaction.Commit();
-                        bulkcopy.Close();
-                    }
-                }
-
-                catch (Exception e)
-                {
-                    transaction.Rollback();
-                    throw e;
-                }
-
+                await bulkcopy.WriteToServerAsync(dt);
             }
         }
+    }
+
+    internal static class IndexOperation
+    {
+        public const string Rebuild = "REBUILD";
+        public const string Disable = "DISABLE";
     }
 }

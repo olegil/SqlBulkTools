@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace SqlBulkTools
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class BulkInsert<T> : ITransaction
     {
         private readonly IEnumerable<T> _list;
@@ -24,6 +28,8 @@ namespace SqlBulkTools
         private readonly bool _bulkCopyEnableStreaming;
         private readonly int? _bulkCopyNotifyAfter;
         private readonly int? _bulkCopyBatchSize;
+        private readonly HashSet<string> _disableIndexList;
+        private bool _disableAllIndexes;
 
         /// <summary>
         /// 
@@ -52,6 +58,8 @@ namespace SqlBulkTools
             _targetAlias = targetAlias;
             _helper = new BulkOperationsHelpers();
             _updateOnList = new List<string>();
+            _disableIndexList = new HashSet<string>();
+            _disableAllIndexes = false;
             _customColumnMappings = customColumnMappings;
             _bulkCopyTimeout = bulkCopyTimeout;
             _bulkCopyEnableStreaming = bulkCopyEnableStreaming;
@@ -61,6 +69,31 @@ namespace SqlBulkTools
             _ext.SetBulkExt(this);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="indexName"></param>
+        /// <returns></returns>
+        public BulkInsert<T> AddTmpDisableNonClusteredIndex(string indexName)
+        {
+            if (indexName == null)
+                throw new ArgumentNullException(nameof(indexName));
+
+            _disableIndexList.Add(indexName);
+
+            return this;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public BulkInsert<T> TmpDisableAllNonClusteredIndexes()
+        {
+            _disableAllIndexes = true;
+            return this;
+        }
+
         void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             if (!_list.Any())
@@ -68,12 +101,15 @@ namespace SqlBulkTools
                 return;
             }
 
+            if (_disableAllIndexes && (_disableIndexList != null && _disableIndexList.Any()))
+            {
+                throw new InvalidOperationException("Invalid setup. If \'TmpDisableAllNonClusteredIndexes\' is invoked, you can not use the \'AddTmpDisableNonClusteredIndex\' method.");
+            }
+
             DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _updateOnList);
-
-            ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
             using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
@@ -93,8 +129,26 @@ namespace SqlBulkTools
                             _helper.SetSqlBulkCopySettings(bulkcopy, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
                                 _bulkCopyNotifyAfter, _bulkCopyTimeout);
 
+                            SqlCommand command = conn.CreateCommand();
+
+                            command.Connection = conn;
+                            command.Transaction = transaction;
+
+                            if (_disableAllIndexes || (_disableIndexList != null && _disableIndexList.Any()))
+                            {
+                                command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Disable, _tableName, _disableIndexList, _disableAllIndexes);
+                                command.ExecuteNonQuery();
+                            }
+
                             bulkcopy.WriteToServer(dt);
+
+                            if (_disableAllIndexes || (_disableIndexList != null && _disableIndexList.Any()))
+                            {
+                                command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Rebuild, _tableName, _disableIndexList, _disableAllIndexes);
+                                command.ExecuteNonQuery();
+                            }
                             transaction.Commit();
+
                             bulkcopy.Close();
                         }
 
@@ -106,6 +160,7 @@ namespace SqlBulkTools
                         finally
                         {
                             conn.Close();
+                            
                         }
                     }
                 }
@@ -126,12 +181,15 @@ namespace SqlBulkTools
                 return;
             }
 
+            if (_disableAllIndexes && (_disableIndexList != null && _disableIndexList.Any()))
+            {
+                throw new InvalidOperationException("Invalid setup. If \'TmpDisableAllNonClusteredIndexes\' is invoked, you can not use the \'AddTmpDisableNonClusteredIndex\' method.");
+            }
+
             DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _updateOnList);
-
-            ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
             using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
@@ -151,8 +209,26 @@ namespace SqlBulkTools
                             _helper.SetSqlBulkCopySettings(bulkcopy, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
                                 _bulkCopyNotifyAfter, _bulkCopyTimeout);
 
+                            SqlCommand command = conn.CreateCommand();
+
+                            command.Connection = conn;
+                            command.Transaction = transaction;
+
+                            if (_disableAllIndexes || (_disableIndexList != null && _disableIndexList.Any()))
+                            {
+                                command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Disable, _tableName, _disableIndexList, _disableAllIndexes);
+                                await command.ExecuteNonQueryAsync();
+                            }
+
                             await bulkcopy.WriteToServerAsync(dt);
+
+                            if (_disableAllIndexes || (_disableIndexList != null && _disableIndexList.Any()))
+                            {
+                                command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Rebuild, _tableName, _disableIndexList, _disableAllIndexes);
+                                await command.ExecuteNonQueryAsync();
+                            }
                             transaction.Commit();
+
                             bulkcopy.Close();
                         }
 
@@ -164,6 +240,7 @@ namespace SqlBulkTools
                         finally
                         {
                             conn.Close();
+
                         }
                     }
                 }

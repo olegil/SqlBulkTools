@@ -4,6 +4,10 @@ using System.Linq.Expressions;
 
 namespace SqlBulkTools
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class Table<T>
     {
         private HashSet<string> Columns { get; set; }
@@ -23,6 +27,14 @@ namespace SqlBulkTools
         private int? _bulkCopyNotifyAfter;
         private int? _bulkCopyBatchSize;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="tableName"></param>
+        /// <param name="sourceAlias"></param>
+        /// <param name="targetAlias"></param>
+        /// <param name="ext"></param>
         public Table(IEnumerable<T> list, string tableName, string sourceAlias, string targetAlias, BulkOperations ext)
         {
             _bulkCopyBatchSize = null;
@@ -47,7 +59,6 @@ namespace SqlBulkTools
         /// Add each column that you want to include in the query. Only include the columns that are relevant to the procedure for best performance. 
         /// </summary>
         /// <param name="columnName">Column name as represented in database</param>
-        /// <param name="isIdentity"></param>
         /// <returns></returns>
         public ColumnSelect<T> AddColumn(Expression<Func<T, object>> columnName)
         {
@@ -58,7 +69,7 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// Adds all properties in model that are either value type of string type. 
+        /// Adds all properties in model that are either value or string type. 
         /// </summary>
         /// <returns></returns>
         public AllColumnSelect<T> AddAllColumns()

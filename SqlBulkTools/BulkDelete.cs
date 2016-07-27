@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 namespace SqlBulkTools
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class BulkDelete<T> : ITransaction
     {
         private readonly IEnumerable<T> _list; 
@@ -22,6 +26,7 @@ namespace SqlBulkTools
         private readonly Dictionary<string, string> _customColumnMappings;
         private readonly int _sqlTimeout;
         private readonly int _bulkCopyTimeout;
+        private readonly HashSet<string> _disableIndexList;
         private readonly bool _bulkCopyEnableStreaming;
         private readonly int? _bulkCopyNotifyAfter;
         private readonly int? _bulkCopyBatchSize;
@@ -54,6 +59,7 @@ namespace SqlBulkTools
             _matchTargetOn = new List<string>();
             _sourceAlias = sourceAlias;
             _targetAlias = targetAlias;
+            _disableIndexList = new HashSet<string>();
             _customColumnMappings = customColumnMappings;
             _sqlTimeout = sqlTimeout;
             _bulkCopyTimeout = bulkCopyTimeout;
@@ -79,6 +85,21 @@ namespace SqlBulkTools
             return this;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="indexName"></param>
+        /// <returns></returns>
+        public BulkDelete<T> AddTmpDisableNonClusteredIndex(string indexName)
+        {
+            if (indexName == null)
+                throw new ArgumentNullException(nameof(indexName));
+
+            _disableIndexList.Add(indexName);
+
+            return this;
+        }
+
         void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             if (!_list.Any())
@@ -95,40 +116,57 @@ namespace SqlBulkTools
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns);
-            ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
 
             using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
-                using (SqlCommand command = new SqlCommand("", conn))
-                {
+                conn.Open();
+                var dtCols = _helper.GetSchema(conn, _schema, _tableName);
+
+                using (SqlTransaction transaction = conn.BeginTransaction()) { 
+
                     try
                     {
-                        conn.Open();
-                        var dtCols = _helper.GetSchema(conn, _schema, _tableName);
+                        SqlCommand command = conn.CreateCommand();
+                        command.Connection = conn;
+                        command.Transaction = transaction;
+                        command.CommandTimeout = _sqlTimeout;
 
                         //Creating temp table on database
                         command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
                         command.ExecuteNonQuery();
 
-                        _helper.InsertToTmpTable(conn, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout);
+                        _helper.InsertToTmpTable(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout);
 
                         // Updating destination table, and dropping temp table
-                        command.CommandTimeout = _sqlTimeout;
-                        string comm = "BEGIN TRAN; " + 
-                                      "MERGE INTO " + _tableName + " AS Target " +
+                        
+
+                        if (_disableIndexList != null && _disableIndexList.Any())
+                        {
+                            command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Disable, _tableName, _disableIndexList);
+                            command.ExecuteNonQuery();
+                        }
+
+                        string comm = "MERGE INTO " + _tableName + " AS Target " +
                                       "USING #TmpTable AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), 
                                       _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN DELETE; " +
-                                      "DROP TABLE #TmpTable; COMMIT TRAN;";
+                                      "DROP TABLE #TmpTable;";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
-                    
+
+                        if (_disableIndexList != null && _disableIndexList.Any())
+                        {
+                            command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Rebuild, _tableName, _disableIndexList);
+                            command.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+
                     }
                     catch (Exception e)
                     {
-                        command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
-                        command.ExecuteNonQuery();                        
+                        transaction.Rollback();
                         throw;
                     }
                     finally
@@ -163,40 +201,55 @@ namespace SqlBulkTools
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns);
 
-            ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal);
-
             using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
-                using (SqlCommand command = new SqlCommand("", conn))
+                conn.Open();
+                var dtCols = _helper.GetSchema(conn, _schema, _tableName);
+
+                using (SqlTransaction transaction = conn.BeginTransaction())
                 {
+
                     try
                     {
-                        conn.Open();
-                        var dtCols = _helper.GetSchema(conn, _schema, _tableName);
+                        SqlCommand command = conn.CreateCommand();
+                        command.Connection = conn;
+                        command.Transaction = transaction;
+                        command.CommandTimeout = _sqlTimeout;
 
                         //Creating temp table on database
                         command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
                         await command.ExecuteNonQueryAsync();
 
-                        await _helper.InsertToTmpTableAsync(conn, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout);
+                        await _helper.InsertToTmpTableAsync(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout);                        
+                       
+                        if (_disableIndexList != null && _disableIndexList.Any())
+                        {
+                            command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Disable, _tableName, _disableIndexList);
+                            await command.ExecuteNonQueryAsync();
+                        }
 
                         // Updating destination table, and dropping temp table
-                        command.CommandTimeout = _sqlTimeout;
-                        string comm = "BEGIN TRAN; " +
-                                      "MERGE INTO " + _tableName + " AS Target " +
+                        string comm = "MERGE INTO " + _tableName + " AS Target " +
                                       "USING #TmpTable AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
                                       _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN DELETE; " +
-                                      "DROP TABLE #TmpTable; COMMIT TRAN;";
+                                      "DROP TABLE #TmpTable;";
                         command.CommandText = comm;
                         await command.ExecuteNonQueryAsync();
+
+                        if (_disableIndexList != null && _disableIndexList.Any())
+                        {
+                            command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Rebuild, _tableName, _disableIndexList);
+                            await command.ExecuteNonQueryAsync();
+                        }
+
+                        transaction.Commit();
 
                     }
                     catch (Exception e)
                     {
-                        command.CommandText = "IF @@TRANCOUNT > 0 ROLLBACK;";
-                        await command.ExecuteNonQueryAsync();
+                        transaction.Rollback();
                         throw;
                     }
                     finally

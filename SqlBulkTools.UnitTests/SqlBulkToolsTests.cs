@@ -149,6 +149,61 @@ namespace SqlBulkTools.UnitTests
             CollectionAssert.AreEqual(expected, result);
         }
 
+        [Test]
+        public void BuilOperationsHelpers_GetIndexManagementCmd_WhenDisableAllIndexesIsTrueReturnsCorrectCmd()
+        {
+            // Arrange
+            string expected =
+                @"DECLARE @sql AS VARCHAR(MAX)=''; SELECT @sql = @sql + 'ALTER INDEX ' + sys.indexes.name + ' ON ' + sys.objects.name + ' DISABLE;'FROM sys.indexes JOIN sys.objects ON sys.indexes.object_id = sys.objects.object_id WHERE sys.indexes.type_desc = 'NONCLUSTERED' AND sys.objects.type_desc = 'USER_TABLE' AND sys.objects.name = 'Books'; EXEC(@sql);";
+            BulkOperationsHelpers helper = new BulkOperationsHelpers();
+
+            // Act
+            string result = helper.GetIndexManagementCmd(IndexOperation.Disable, "Books", null, true);
+
+            // Assert
+            Assert.AreEqual(expected, result);
+
+        }
+
+        [Test]
+        public void BuilOperationsHelpers_GetIndexManagementCmd_WithOneIndexReturnsCorrectCmd()
+        {
+            // Arrange
+            string expected =
+                @"DECLARE @sql AS VARCHAR(MAX)=''; SELECT @sql = @sql + 'ALTER INDEX ' + sys.indexes.name + ' ON ' + sys.objects.name + ' DISABLE;'FROM sys.indexes JOIN sys.objects ON sys.indexes.object_id = sys.objects.object_id WHERE sys.indexes.type_desc = 'NONCLUSTERED' AND sys.objects.type_desc = 'USER_TABLE' AND sys.objects.name = 'Books' AND sys.indexes.name = 'IX_Title'; EXEC(@sql);";
+            BulkOperationsHelpers helper = new BulkOperationsHelpers();
+            HashSet<string> indexes = new HashSet<string>();
+            indexes.Add("IX_Title");
+
+            // Act
+            string result = helper.GetIndexManagementCmd(IndexOperation.Disable, "Books", indexes);
+
+            // Assert
+            Assert.AreEqual(expected, result);
+
+        }
+
+        [Test]
+        public void BuilOperationsHelpers_GetIndexManagementCmd_WithListOfIndexesReturnsCorrectCmd()
+        {
+            // Arrange
+            string expected =
+                @"DECLARE @sql AS VARCHAR(MAX)=''; SELECT @sql = @sql + 'ALTER INDEX ' + sys.indexes.name + ' ON ' + sys.objects.name + ' DISABLE;'FROM sys.indexes JOIN sys.objects ON sys.indexes.object_id = sys.objects.object_id WHERE sys.indexes.type_desc = 'NONCLUSTERED' AND sys.objects.type_desc = 'USER_TABLE' AND sys.objects.name = 'Books' AND sys.indexes.name = 'IX_Title' AND sys.indexes.name = 'IX_Price'; EXEC(@sql);";
+            BulkOperationsHelpers helper = new BulkOperationsHelpers();
+            HashSet<string> indexes = new HashSet<string>();
+            indexes.Add("IX_Title");
+            indexes.Add("IX_Price");
+
+            // Act
+            string result = helper.GetIndexManagementCmd(IndexOperation.Disable, "Books", indexes);
+
+            // Assert
+            Assert.AreEqual(expected, result);
+
+        }
+
+
+
         private HashSet<string> GetTestParameters()
         {
             HashSet<string> parameters = new HashSet<string>();
