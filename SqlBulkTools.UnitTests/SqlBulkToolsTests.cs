@@ -7,21 +7,6 @@ namespace SqlBulkTools.UnitTests
     class SqlBulkToolsUnitTests
     {
 
-        [TestCase("[api].[dbo].MyTableName", "MyTableName")]
-        [TestCase("[dbo].MyTableName", "MyTableName")]
-        [TestCase("MyTableName", "MyTableName")]
-        public void BulkOperationsHelpers_RemoveSchemaFromTable_RemovesSchema(string tableName, string expectedResult)
-        {
-            // Arrange
-            var sut = new BulkOperationsHelpers();
-
-            // Act
-            var result = sut.RemoveSchemaFromTable(tableName);
-
-            // Assert
-            Assert.AreEqual(expectedResult, result);
-        }
-
         [Test]
         public void BulkOperationsHelpers_BuildJoinConditionsForUpdateOrInsertWithThreeConditions()
         {
@@ -106,11 +91,11 @@ namespace SqlBulkTools.UnitTests
             // Arrange
             var updateOrInsertColumns = GetTestParameters();
             var expected =
-                "INSERT (id, Name, Town, Email, IsCool) values (Source.id, Source.Name, Source.Town, Source.Email, Source.IsCool)";
+                "INSERT (Name, Town, Email, IsCool) values (Source.Name, Source.Town, Source.Email, Source.IsCool)";
             var sut = new BulkOperationsHelpers();
 
             // Act
-            var result = sut.BuildInsertSet(updateOrInsertColumns, "Source");
+            var result = sut.BuildInsertSet(updateOrInsertColumns, "Source", "id");
 
             // Assert
             Assert.AreEqual(expected, result);
@@ -128,7 +113,7 @@ namespace SqlBulkTools.UnitTests
             var sut = new BulkOperationsHelpers();
 
             // Act
-            var result = sut.BuildInsertSet(updateOrInsertColumns, "Source");
+            var result = sut.BuildInsertSet(updateOrInsertColumns, "Source", null);
 
             // Assert
             Assert.AreEqual(expected, result);
@@ -181,6 +166,34 @@ namespace SqlBulkTools.UnitTests
             // Assert
             Assert.AreEqual(expected, result);
 
+        }
+
+        [Test]
+        public void BuildOperationsHelpers_RebuildSchema_WithExplicitSchemaIsCorrect()
+        {
+            // Arrange
+            string expected = "[db].[CustomSchemaName].[TableName]";
+            BulkOperationsHelpers helper = new BulkOperationsHelpers();
+
+            // Act
+            string result = helper.GetFullQualifyingTableName("db", "CustomSchemaName", "TableName");
+
+            // Act
+            Assert.AreEqual(expected, result);
+        }
+
+        [Test]
+        public void BuildOperationsHelpers_RebuildSchema_WithDefaultSchemaName()
+        {
+            // Arrange
+            string expected = "[db].[@defaultSchema].[TableName]";
+            BulkOperationsHelpers helper = new BulkOperationsHelpers();
+
+            // Act
+            string result = helper.GetFullQualifyingTableName("db", null, "TableName");
+
+            // Act
+            Assert.AreEqual(expected, result);
         }
 
         [Test]

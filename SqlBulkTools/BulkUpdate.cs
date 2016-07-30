@@ -30,6 +30,8 @@ namespace SqlBulkTools
         private readonly int? _bulkCopyNotifyAfter;
         private readonly HashSet<string> _disableIndexList;
         private readonly int? _bulkCopyBatchSize;
+        private readonly bool _disableAllIndexes;
+        private readonly SqlBulkCopyOptions _sqlBulkCopyOptions;
         private readonly BulkOperations _ext;
         private readonly BulkOperationsHelpers _helper;
 
@@ -40,6 +42,7 @@ namespace SqlBulkTools
         /// <param name="tableName"></param>
         /// <param name="schema"></param>
         /// <param name="columns"></param>
+        /// <param name="disableAllIndexes"></param>
         /// <param name="sourceAlias"></param>
         /// <param name="targetAlias"></param>
         /// <param name="customColumnMappings"></param>
@@ -48,10 +51,12 @@ namespace SqlBulkTools
         /// <param name="bulkCopyEnableStreaming"></param>
         /// <param name="bulkCopyNotifyAfter"></param>
         /// <param name="bulkCopyBatchSize"></param>
+        /// <param name="sqlBulkCopyOptions"></param>
         /// <param name="ext"></param>
-        public BulkUpdate(IEnumerable<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias, string targetAlias,
+        /// <param name="disableIndexList"></param>
+        public BulkUpdate(IEnumerable<T> list, string tableName, string schema, HashSet<string> columns, HashSet<string> disableIndexList, bool disableAllIndexes, string sourceAlias, string targetAlias,
             Dictionary<string, string> customColumnMappings, int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter,
-            int? bulkCopyBatchSize, BulkOperations ext)
+            int? bulkCopyBatchSize, SqlBulkCopyOptions sqlBulkCopyOptions, BulkOperations ext)
         {
             _list = list;
             _tableName = tableName;
@@ -61,14 +66,16 @@ namespace SqlBulkTools
             _targetAlias = targetAlias;
             _customColumnMappings = customColumnMappings;
             _sqlTimeout = sqlTimeout;
-            _disableIndexList = new HashSet<string>();
+            _disableIndexList = disableIndexList;
+            _disableAllIndexes = disableAllIndexes;
             _bulkCopyTimeout = bulkCopyTimeout;
             _bulkCopyEnableStreaming = bulkCopyEnableStreaming;
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;
             _helper = new BulkOperationsHelpers();
             _matchTargetOn = new List<string>();
-            _ext = ext;
+            _ext = ext;           
+            _sqlBulkCopyOptions = sqlBulkCopyOptions;
             _ext.SetBulkExt(this);
         }
 
@@ -78,37 +85,40 @@ namespace SqlBulkTools
         /// for matching composite relationships. 
         /// </summary>
         /// <param name="columnName"></param>
-        /// <param name="isIdentity"></param>
         /// <returns></returns>
-        public BulkUpdate<T> MatchTargetOn(Expression<Func<T, object>> columnName, bool isIdentity = false)
+        public BulkUpdate<T> MatchTargetOn(Expression<Func<T, object>> columnName)
         {
             var propertyName = _helper.GetPropertyName(columnName);
+
+            if (propertyName == null)
+                throw new InvalidOperationException("MatchTargetOn column name can't be null.");
+
             _matchTargetOn.Add(propertyName);
 
-            if (isIdentity)
-            {
-                if (_identityColumn == null)
-                    _identityColumn = propertyName;
-
-                else
-                {
-                    throw new InvalidOperationException("Can't have more than one identity column");
-                }
-            }
             return this;
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="indexName"></param>
+        /// <param name="columnName"></param>
         /// <returns></returns>
-        public BulkUpdate<T> AddTmpDisableNonClusteredIndex(string indexName)
+        /// <exception cref="InvalidOperationException"></exception>
+        public BulkUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName)
         {
-            if (indexName == null)
-                throw new ArgumentNullException(nameof(indexName));
 
-            _disableIndexList.Add(indexName);
+            var propertyName = _helper.GetPropertyName(columnName);
+
+            if (propertyName == null)
+                throw new InvalidOperationException("SetIdentityColumn column name can't be null");
+
+            if (_identityColumn == null)
+                _identityColumn = propertyName;
+
+            else
+            {
+                throw new InvalidOperationException("Can't have more than one identity column");
+            }
 
             return this;
         }
@@ -118,6 +128,11 @@ namespace SqlBulkTools
             if (!_list.Any())
             {
                 return;
+            }
+
+            if (_disableAllIndexes && (_disableIndexList != null && _disableIndexList.Any()))
+            {
+                throw new InvalidOperationException("Invalid setup. If \'TmpDisableAllNonClusteredIndexes\' is invoked, you can not use the \'AddTmpDisableNonClusteredIndex\' method.");
             }
 
             if (_matchTargetOn.Count == 0)
@@ -134,7 +149,7 @@ namespace SqlBulkTools
             using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
                 conn.Open();
-                var dtCols = _helper.GetSchema(conn, _schema, _tableName);
+                var dtCols = _helper.GetDatabaseSchema(conn, _schema, _tableName);
 
                 using (SqlTransaction transaction = conn.BeginTransaction())
                 {
@@ -149,20 +164,18 @@ namespace SqlBulkTools
                         command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
                         command.ExecuteNonQuery();
 
-
-
                         //Bulk insert into temp table
                         _helper.InsertToTmpTable(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
-                            _bulkCopyNotifyAfter, _bulkCopyTimeout);
-
+                            _bulkCopyNotifyAfter, _bulkCopyTimeout, _sqlBulkCopyOptions);
+                    
                         // Updating destination table, and dropping temp table
                         if (_disableIndexList != null && _disableIndexList.Any())
                         {
-                            command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Disable, _tableName, _disableIndexList);
+                            command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Disable, _tableName, _disableIndexList, _disableAllIndexes);
                             command.ExecuteNonQuery();
                         }
 
-                        string comm = "MERGE INTO " + _tableName + " AS Target " +
+                        string comm = "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
                                       "USING #TmpTable AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
                                           _sourceAlias, _targetAlias) +
@@ -197,7 +210,7 @@ namespace SqlBulkTools
                         throw;
                     }
 
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         transaction.Rollback();
                         throw;
@@ -218,6 +231,11 @@ namespace SqlBulkTools
                 return;
             }
 
+            if (_disableAllIndexes && (_disableIndexList != null && _disableIndexList.Any()))
+            {
+                throw new InvalidOperationException("Invalid setup. If \'TmpDisableAllNonClusteredIndexes\' is invoked, you can not use the \'AddTmpDisableNonClusteredIndex\' method.");
+            }
+
             if (_matchTargetOn.Count == 0)
             {
                 throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. This is usually " +
@@ -232,7 +250,7 @@ namespace SqlBulkTools
             using (SqlConnection conn = _helper.GetSqlConnection(connectionName, credentials, connection))
             {
                 conn.Open();
-                var dtCols = _helper.GetSchema(conn, _schema, _tableName);
+                var dtCols = _helper.GetDatabaseSchema(conn, _schema, _tableName);
 
                 using (SqlTransaction transaction = conn.BeginTransaction())
                 {
@@ -249,16 +267,16 @@ namespace SqlBulkTools
 
                         //Bulk insert into temp table
                         await _helper.InsertToTmpTableAsync(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
-                            _bulkCopyNotifyAfter, _bulkCopyTimeout);                                           
+                            _bulkCopyNotifyAfter, _bulkCopyTimeout, _sqlBulkCopyOptions);                                           
 
                         if (_disableIndexList != null && _disableIndexList.Any())
                         {
-                            command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Disable, _tableName, _disableIndexList);
+                            command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Disable, _tableName, _disableIndexList, _disableAllIndexes);
                             await command.ExecuteNonQueryAsync();
                         }
 
                         // Updating destination table, and dropping temp table
-                        string comm = "MERGE INTO " + _tableName + " AS Target " +
+                        string comm = "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
                                       "USING #TmpTable AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
                                           _sourceAlias, _targetAlias) +
@@ -293,7 +311,7 @@ namespace SqlBulkTools
                         throw;
                     }
 
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         transaction.Rollback();
                         throw;

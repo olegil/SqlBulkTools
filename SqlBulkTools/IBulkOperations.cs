@@ -33,6 +33,13 @@ namespace SqlBulkTools
         /// <param name="credentials"></param>
         /// <returns></returns>
         Task CommitTransactionAsync(string connectionName, SqlCredential credentials = null);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         CollectionSelect<T> Setup<T>(Func<Setup<T>, CollectionSelect<T>> list);
     }
 }

@@ -10,6 +10,7 @@ using SqlBulkTools.IntegrationTests.TestModel;
 
 namespace SqlBulkTools.IntegrationTests.TestEnvironment
 {
+#pragma warning disable 618
     public class BookRandomizer
     {
 

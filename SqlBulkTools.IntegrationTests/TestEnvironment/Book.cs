@@ -16,6 +16,7 @@ namespace SqlBulkTools.IntegrationTests.TestModel
         public int Id { get; set; }
 
         [MaxLength(13)]
+        [Index]
         public string ISBN { get; set; }
 
         [MaxLength(256)]

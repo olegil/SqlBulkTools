@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq.Expressions;
 
 namespace SqlBulkTools
@@ -24,7 +25,10 @@ namespace SqlBulkTools
         private Dictionary<string, string> CustomColumnMappings { get; set; }
         private readonly BulkOperationsHelpers _helper;
         private readonly HashSet<string> _columns;
-        
+        private bool _disableAllIndexes;
+        private readonly HashSet<string> _disableIndexList;
+        private SqlBulkCopyOptions _sqlBulkCopyOptions;
+
 
         /// <summary>
         /// 
@@ -40,14 +44,17 @@ namespace SqlBulkTools
         /// <param name="bulkCopyEnableStreaming"></param>
         /// <param name="bulkCopyNotifyAfter"></param>
         /// <param name="bulkCopyBatchSize"></param>
+        /// <param name="sqlBulkCopyOptions"></param>
         /// <param name="ext"></param>
         public ColumnSelect(IEnumerable<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias, 
-            int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, 
+            int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, SqlBulkCopyOptions sqlBulkCopyOptions, 
             BulkOperations ext)
         {
             _helper = new BulkOperationsHelpers();
             _list = list;
             _columns = columns;
+            _disableAllIndexes = false;
+            _disableIndexList = new HashSet<string>();
             _tableName = tableName;
             _schema = schema;
             _sourceAlias = sourceAlias;
@@ -58,6 +65,7 @@ namespace SqlBulkTools
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;
             _ext = ext;
+            _sqlBulkCopyOptions = sqlBulkCopyOptions;
             CustomColumnMappings = new Dictionary<string, string>();
         }
 
@@ -66,7 +74,6 @@ namespace SqlBulkTools
         /// Add each column that you want to include in the query. Only include the columns that are relevant to the procedure for best performance. 
         /// </summary>
         /// <param name="columnName">Column name as represented in database</param>
-        /// <param name="isIdentity"></param>
         /// <returns></returns>
         public ColumnSelect<T> AddColumn(Expression<Func<T, object>> columnName)
         {
@@ -95,6 +102,31 @@ namespace SqlBulkTools
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="indexName"></param>
+        /// <returns></returns>
+        public ColumnSelect<T> AddTmpDisableNonClusteredIndex(string indexName)
+        {
+            if (indexName == null)
+                throw new ArgumentNullException(nameof(indexName));
+
+            _disableIndexList.Add(indexName);
+
+            return this;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public ColumnSelect<T> TmpDisableAllNonClusteredIndexes()
+        {
+            _disableAllIndexes = true;
+            return this;
+        }
+
+        /// <summary>
         /// A bulk insert will attempt to insert all records. If you have any unique constraints, these must be respected. 
         /// Notes: (1) Only the columns configured (via AddColumn) will be evaluated.
         /// 
@@ -103,9 +135,9 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkInsert<T> BulkInsert()
         {
-            return new BulkInsert<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, 
+            return new BulkInsert<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias, 
                 CustomColumnMappings, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
-                _bulkCopyBatchSize, _ext);
+                _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
         }
 
         /// <summary>
@@ -117,9 +149,9 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkInsertOrUpdate<T> BulkInsertOrUpdate()
         {
-            return new BulkInsertOrUpdate<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias,
+            return new BulkInsertOrUpdate<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias,
                 CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
-                _bulkCopyBatchSize, _ext);
+                _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
         }
 
         /// <summary>
@@ -129,9 +161,9 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkUpdate<T> BulkUpdate()
         {
-            return new BulkUpdate<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, 
+            return new BulkUpdate<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias, 
                 CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
-                _bulkCopyBatchSize, _ext);
+                _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
         }
 
         /// <summary>
@@ -142,8 +174,8 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkDelete<T> BulkDelete()
         {
-            return new BulkDelete<T>(_list, _tableName, _schema, _columns, _sourceAlias, _targetAlias, CustomColumnMappings, 
-                _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, _bulkCopyBatchSize, _ext);
+            return new BulkDelete<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias, CustomColumnMappings, 
+                _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
         } 
 
     }

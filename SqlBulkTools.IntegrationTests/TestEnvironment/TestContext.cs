@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Data.Entity;
 using SqlBulkTools.IntegrationTests.TestModel;
 
 namespace SqlBulkTools.IntegrationTests.TestEnvironment
@@ -17,5 +12,7 @@ namespace SqlBulkTools.IntegrationTests.TestEnvironment
         }
 
         public virtual DbSet<Book> Books { get; set; }
+        public virtual DbSet<SchemaTestCustomSchemaSameName> SchemaTestCustomSchemaConflictingName { get; set; }
+        public virtual DbSet<SchemaTestDefaultSchema> SchemaTest { get; set; }
     }
 }

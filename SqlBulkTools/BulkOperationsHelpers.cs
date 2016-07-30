@@ -17,7 +17,7 @@ namespace SqlBulkTools
 {
     internal class BulkOperationsHelpers
     {
-        public string BuildCreateTempTable(HashSet<string> columns, DataTable schema)
+        internal string BuildCreateTempTable(HashSet<string> columns, DataTable schema)
         {
             Dictionary<string, string> actualColumns = new Dictionary<string, string>();
             Dictionary<string, string> actualColumnsMaxCharLength = new Dictionary<string, string>();
@@ -30,10 +30,9 @@ namespace SqlBulkTools
                     row["CHARACTER_MAXIMUM_LENGTH"].ToString());
             }
 
-
             StringBuilder command = new StringBuilder();
 
-            command.Append("BEGIN TRAN; CREATE TABLE #TmpTable(");
+            command.Append("CREATE TABLE #TmpTable(");
 
             List<string> paramList = new List<string>();
 
@@ -61,25 +60,12 @@ namespace SqlBulkTools
             string paramListConcatenated = string.Join(", ", paramList);
 
             command.Append(paramListConcatenated);
-            command.Append("); COMMIT TRAN;");
+            command.Append(");");
 
             return command.ToString();
         }
 
-        public string RemoveSchemaFromTable(string tableName)
-        {
-            Regex regex = new Regex(@"\[.*\]\.");
-            Match match = regex.Match(tableName);
-            if (match.Success)
-            {
-                return tableName.Remove(0, match.Value.Length);
-            }
-
-            return tableName;
-
-        }
-
-        public string BuildJoinConditionsForUpdateOrInsert(string[] updateOn, string sourceAlias, string targetAlias)
+        internal string BuildJoinConditionsForUpdateOrInsert(string[] updateOn, string sourceAlias, string targetAlias)
         {
             StringBuilder command = new StringBuilder();
 
@@ -97,7 +83,7 @@ namespace SqlBulkTools
             return command.ToString();
         }
 
-        public string BuildUpdateSet(HashSet<string> columns, string sourceAlias, string targetAlias, string identityColumn)
+        internal string BuildUpdateSet(HashSet<string> columns, string sourceAlias, string targetAlias, string identityColumn)
         {
             StringBuilder command = new StringBuilder();
             List<string> paramsSeparated = new List<string>();
@@ -117,7 +103,7 @@ namespace SqlBulkTools
             return command.ToString();
         }
 
-        public string BuildInsertSet(HashSet<string> columns, string sourceAlias)
+        internal string BuildInsertSet(HashSet<string> columns, string sourceAlias, string identityColumn)
         {
             StringBuilder command = new StringBuilder();
             List<string> insertColumns = new List<string>();
@@ -127,8 +113,11 @@ namespace SqlBulkTools
 
             foreach (var column in columns.ToList())
             {
-                insertColumns.Add(column);
-                values.Add(sourceAlias + "." + column);
+                if (identityColumn != null && column != identityColumn || identityColumn == null)
+                {
+                    insertColumns.Add(column);
+                    values.Add(sourceAlias + "." + column);
+                }
             }
 
             command.Append(string.Join(", ", insertColumns));
@@ -139,7 +128,7 @@ namespace SqlBulkTools
             return command.ToString();
         }
 
-        public string GetPropertyName(Expression method)
+        internal string GetPropertyName(Expression method)
         {
             LambdaExpression lambda = method as LambdaExpression;
             if (lambda == null)
@@ -163,7 +152,7 @@ namespace SqlBulkTools
             return memberExpr.Member.Name;
         }
 
-        public DataTable ToDataTable<T>(IEnumerable<T> items, HashSet<string> columns, Dictionary<string, string> columnMappings, List<string> matchOnColumns = null)
+        internal DataTable ToDataTable<T>(IEnumerable<T> items, HashSet<string> columns, Dictionary<string, string> columnMappings, List<string> matchOnColumns = null)
         {
             DataTable dataTable = new DataTable(typeof(T).Name);
 
@@ -206,7 +195,7 @@ namespace SqlBulkTools
             return dataTable;
         }
 
-        public SqlConnection GetSqlConnection(string connectionName, SqlCredential credentials, SqlConnection connection)
+        internal SqlConnection GetSqlConnection(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
             SqlConnection conn = null;
 
@@ -226,6 +215,20 @@ namespace SqlBulkTools
             throw new InvalidOperationException("Could not create SQL Connection");
         }
 
+        internal string GetFullQualifyingTableName(string databaseName, string schemaName, string tableName)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[");
+            sb.Append(databaseName);
+            sb.Append("].[");
+            sb.Append(schemaName);
+            sb.Append("].[");
+            sb.Append(tableName);
+            sb.Append("]");
+
+            return sb.ToString();
+        }
+
 
         /// <summary>
         /// If there are MatchOnColumns that don't exist in columns, add to columns.
@@ -233,7 +236,7 @@ namespace SqlBulkTools
         /// <param name="columns"></param>
         /// <param name="matchOnColumns"></param>
         /// <returns></returns>
-        public HashSet<string> CheckForAdditionalColumns(HashSet<string> columns, List<string> matchOnColumns)
+        internal HashSet<string> CheckForAdditionalColumns(HashSet<string> columns, List<string> matchOnColumns)
         {
             foreach (var col in matchOnColumns)
             {
@@ -246,7 +249,7 @@ namespace SqlBulkTools
             return columns;
         }
 
-        public void DoColumnMappings(Dictionary<string, string> columnMappings, HashSet<string> columns,
+        internal void DoColumnMappings(Dictionary<string, string> columnMappings, HashSet<string> columns,
         List<string> updateOnList)
         {
             if (columnMappings.Count > 0)
@@ -270,7 +273,7 @@ namespace SqlBulkTools
             }
         }
 
-        public void DoColumnMappings(Dictionary<string, string> columnMappings, HashSet<string> columns)
+        internal void DoColumnMappings(Dictionary<string, string> columnMappings, HashSet<string> columns)
         {
             if (columnMappings.Count > 0)
             {
@@ -293,7 +296,7 @@ namespace SqlBulkTools
         /// <param name="bulkCopyBatchSize"></param>
         /// <param name="bulkCopyNotifyAfter"></param>
         /// <param name="bulkCopyTimeout"></param>
-        public void SetSqlBulkCopySettings(SqlBulkCopy bulkcopy, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
+        internal void SetSqlBulkCopySettings(SqlBulkCopy bulkcopy, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
         {
             bulkcopy.EnableStreaming = bulkCopyEnableStreaming;
 
@@ -317,7 +320,7 @@ namespace SqlBulkTools
         /// <param name="bulkCopy"></param>
         /// <param name="columns"></param>
         /// <param name="customColumnMappings"></param>
-        public void MapColumns(SqlBulkCopy bulkCopy, HashSet<string> columns, Dictionary<string, string> customColumnMappings)
+        internal void MapColumns(SqlBulkCopy bulkCopy, HashSet<string> columns, Dictionary<string, string> customColumnMappings)
         {
 
             foreach (var column in columns.ToList())
@@ -335,7 +338,7 @@ namespace SqlBulkTools
 
         }
 
-        public HashSet<string> GetAllValueTypeAndStringColumns(Type type)
+        internal HashSet<string> GetAllValueTypeAndStringColumns(Type type)
         {
             HashSet<string> columns = new HashSet<string>();
 
@@ -355,7 +358,7 @@ namespace SqlBulkTools
 
         }
 
-        public string GetIndexManagementCmd(string action, string table, HashSet<string> disableIndexList, bool disableAllIndexes = false)
+        internal string GetIndexManagementCmd(string action, string table, HashSet<string> disableIndexList, bool disableAllIndexes = false)
         {
             //AND sys.objects.name = 'Books' AND sys.indexes.name = 'IX_Title'
             StringBuilder sb = new StringBuilder();
@@ -375,7 +378,7 @@ namespace SqlBulkTools
                                 "'ALTER INDEX ' + sys.indexes.name + ' ON ' + sys.objects.name + ' " + action + ";'" +
                                 "FROM sys.indexes JOIN sys.objects ON sys.indexes.object_id = sys.objects.object_id " +
                                 "WHERE sys.indexes.type_desc = 'NONCLUSTERED' " +
-                                "AND sys.objects.type_desc = 'USER_TABLE'" + 
+                                "AND sys.objects.type_desc = 'USER_TABLE'" +
                                 " AND sys.objects.name = '" + table + "'" + (sb.Length > 0 ? sb.ToString() : "") + "; EXEC(@sql);";
 
             return cmd;
@@ -388,22 +391,22 @@ namespace SqlBulkTools
         /// <param name="schema"></param>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        public DataTable GetSchema(SqlConnection conn, string schema, string tableName)
+        internal DataTable GetDatabaseSchema(SqlConnection conn, string schema, string tableName)
         {
             string[] restrictions = new string[4];
             restrictions[0] = conn.Database;
-            restrictions[1] = schema ?? null;
-            restrictions[2] = RemoveSchemaFromTable(tableName);
+            restrictions[1] = schema;
+            restrictions[2] = tableName;
             var dtCols = conn.GetSchema("Columns", restrictions);
 
-            if (dtCols.Rows.Count == 0 && schema != null) throw new InvalidOperationException("Table name " + tableName + " with schema " + schema + " not found. Check your setup and try again.");
-            if (dtCols.Rows.Count == 0) throw new InvalidOperationException("Table name " + tableName + " not found. Check your setup and try again.");
+            if (dtCols.Rows.Count == 0 && schema != null) throw new InvalidOperationException("Table name '" + tableName + "\' with schema name \'" + schema + "\' not found. Check your setup and try again.");
+            if (dtCols.Rows.Count == 0) throw new InvalidOperationException("Table name \'" + tableName + "\' not found. Check your setup and try again.");
             return dtCols;
         }
 
-        public void InsertToTmpTable(SqlConnection conn, SqlTransaction transaction, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
+        internal void InsertToTmpTable(SqlConnection conn, SqlTransaction transaction, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout, SqlBulkCopyOptions sqlBulkCopyOptions)
         {
-            using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
+            using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, sqlBulkCopyOptions, transaction))
             {
                 bulkcopy.DestinationTableName = "#TmpTable";
 
@@ -415,9 +418,9 @@ namespace SqlBulkTools
             }
         }
 
-        public async Task InsertToTmpTableAsync(SqlConnection conn, SqlTransaction transaction, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout)
+        internal async Task InsertToTmpTableAsync(SqlConnection conn, SqlTransaction transaction, DataTable dt, bool bulkCopyEnableStreaming, int? bulkCopyBatchSize, int? bulkCopyNotifyAfter, int bulkCopyTimeout, SqlBulkCopyOptions sqlBulkCopyOptions)
         {
-            using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
+            using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, sqlBulkCopyOptions, transaction))
             {
                 bulkcopy.DestinationTableName = "#TmpTable";
 
@@ -434,5 +437,10 @@ namespace SqlBulkTools
     {
         public const string Rebuild = "REBUILD";
         public const string Disable = "DISABLE";
+    }
+
+    internal static class Constants
+    {
+        public const string DefaultSchemaName = "dbo";
     }
 }

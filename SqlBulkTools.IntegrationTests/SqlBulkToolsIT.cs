@@ -9,6 +9,7 @@ using Ploeh.AutoFixture;
 using SqlBulkTools.IntegrationTests.TestEnvironment;
 using SqlBulkTools.IntegrationTests.TestModel;
 using TestContext = SqlBulkTools.IntegrationTests.TestEnvironment.TestContext;
+using EntityFramework.BulkInsert.Extensions;
 
 namespace SqlBulkTools.IntegrationTests
 {
@@ -25,11 +26,17 @@ namespace SqlBulkTools.IntegrationTests
         [OneTimeSetUp]
         public void Setup()
         {
-            
+
             _db = new TestContext();
             _randomizer = new BookRandomizer();
             Database.SetInitializer(new DropCreateDatabaseAlways<TestContext>());
             DeleteLogFile();
+        }
+
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            _db.Dispose();
         }
 
         [TestCase(500)]
@@ -54,8 +61,7 @@ namespace SqlBulkTools.IntegrationTests
             Assert.AreEqual(rows * RepeatTimes, _db.Books.Count());
         }
 
-        [TestCase(500)]
-        [TestCase(100000)]
+        [TestCase(1000)]
         public void SqlBulkTools_BulkInsert_WithAllColumns(int rows)
         {
             BulkDelete(_db.Books.ToList());
@@ -76,8 +82,29 @@ namespace SqlBulkTools.IntegrationTests
             Assert.AreEqual(rows * RepeatTimes, _db.Books.Count());
         }
 
+        [TestCase(1000)]
+        public void EntityFrameworkBulkInsert_OtherBulkInsertComparison(int rows)
+        {
+            BulkDelete(_db.Books.ToList());
+            _bookCollection = new List<Book>();
+            _bookCollection.AddRange(_randomizer.GetRandomCollection(rows));
+            List<long> results = new List<long>();
+
+            AppendToLogFile("Testing Other Tool BulkInsert.EntityFramework6 with " + rows + " rows");
+
+            for (int i = 0; i < RepeatTimes; i++)
+            {
+                long time = BulkInsertWithEfBulkInsert(_bookCollection);
+                results.Add(time);
+            }
+            double avg = results.Average(l => l);
+            AppendToLogFile("Average result (" + RepeatTimes + " iterations): " + avg.ToString("#.##") + " ms\n\n");
+
+            Assert.AreEqual(rows * RepeatTimes, _db.Books.Count());
+        }
+
         [TestCase(450, 50)]
-        [TestCase(900, 100)]
+        [TestCase(3000, 6000)]
         public void SqlBulkTools_BulkInsertOrUpdate(int rows, int newRows)
         {
             BulkDelete(_db.Books.ToList());
@@ -103,7 +130,7 @@ namespace SqlBulkTools.IntegrationTests
 
                 // Add new rows
                 _bookCollection.AddRange(_randomizer.GetRandomCollection(newRows));
-                
+
 
                 long time = BulkInsertOrUpdate(_bookCollection);
                 results.Add(time);
@@ -115,13 +142,52 @@ namespace SqlBulkTools.IntegrationTests
             double avg = results.Average(l => l);
             AppendToLogFile("Average result (" + RepeatTimes + " iterations): " + avg.ToString("#.##") + " ms\n\n");
 
-                      
         }
 
-        
+        [TestCase(450, 50)]
+        public void SqlBulkTools_BulkInsertOrUpdateAllColumns(int rows, int newRows)
+        {
+            BulkDelete(_db.Books.ToList());
+            var fixture = new Fixture();
+            _bookCollection = _randomizer.GetRandomCollection(rows);
+
+            List<long> results = new List<long>();
+
+            AppendToLogFile("Testing BulkInsertOrUpdateAllColumns with " + (rows + newRows) + " rows");
+
+            for (int i = 0; i < RepeatTimes; i++)
+            {
+                BulkInsert(_bookCollection);
+
+                // Update some rows
+                for (int j = 0; j < 200; j++)
+                {
+                    var newBook = fixture.Build<Book>().Without(s => s.ISBN).Create();
+                    var prevIsbn = _bookCollection[j].ISBN;
+                    _bookCollection[j] = newBook;
+                    _bookCollection[j].ISBN = prevIsbn;
+                }
+
+                // Add new rows
+                _bookCollection.AddRange(_randomizer.GetRandomCollection(newRows));
+
+
+                long time = BulkInsertOrUpdateAllColumns(_bookCollection);
+                results.Add(time);
+
+                Assert.AreEqual(rows + newRows, _db.Books.Count());
+
+            }
+
+            double avg = results.Average(l => l);
+            AppendToLogFile("Average result (" + RepeatTimes + " iterations): " + avg.ToString("#.##") + " ms\n\n");
+
+        }
+
 
         [TestCase(500)]
-        [TestCase(1000)]
+        [TestCase(2000)]
+        [TestCase(5000)]
         public void SqlBulkTools_BulkUpdate(int rows)
         {
             var fixture = new Fixture();
@@ -137,7 +203,7 @@ namespace SqlBulkTools.IntegrationTests
 
             for (int i = 0; i < RepeatTimes; i++)
             {
-                
+
                 _bookCollection = _randomizer.GetRandomCollection(rows);
                 BulkInsert(_bookCollection);
 
@@ -173,6 +239,7 @@ namespace SqlBulkTools.IntegrationTests
         {
             var fixture = new Fixture();
             _bookCollection = _randomizer.GetRandomCollection(rows);
+            BulkDelete(_db.Books.ToList());
 
             List<long> results = new List<long>();
 
@@ -309,6 +376,7 @@ namespace SqlBulkTools.IntegrationTests
         {
             var fixture = new Fixture();
             _bookCollection = _randomizer.GetRandomCollection(rows);
+            BulkDelete(_db.Books.ToList());
 
             List<long> results = new List<long>();
 
@@ -380,6 +448,28 @@ namespace SqlBulkTools.IntegrationTests
         }
 
         [Test]
+        public void SqlBulkTools_WithConflictingTableName_ThrowsException()
+        {       
+            // Arrange
+            BulkOperations bulk = new BulkOperations();
+
+            List<SchemaTestDefaultSchema> conflictingSchemaCol = new List<SchemaTestDefaultSchema>();
+
+            for (int i = 0; i < 30; i++)
+            {
+                conflictingSchemaCol.Add(new SchemaTestDefaultSchema() { ColumnB = "ColumnA " + i + "BUlk Insert" });
+            }
+
+            bulk.Setup<SchemaTestDefaultSchema>(x => x.ForCollection(conflictingSchemaCol))
+                .WithTable("SchemaTest")
+                .AddAllColumns()
+                .BulkInsert();
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+        }
+
+        [Test]
         public void SqlBulkTools_IdentityColumnSet_UpdatesTarget()
         {
             // Arrange
@@ -397,11 +487,12 @@ namespace SqlBulkTools.IntegrationTests
                 .WithTable("Books")
                 .AddAllColumns()
                 .BulkUpdate()
-                .MatchTargetOn(x => x.Id, true);
+                .SetIdentityColumn(x => x.Id)
+                .MatchTargetOn(x => x.Id);
 
             // Act
             bulk.CommitTransaction("SqlBulkToolsTest");
-            
+
             // Assert
             Assert.AreEqual(testDesc, _db.Books.First().Description);
         }
@@ -433,7 +524,7 @@ namespace SqlBulkTools.IntegrationTests
         }
 
         private long BulkInsert(IEnumerable<Book> col)
-        {           
+        {
             BulkOperations bulk = new BulkOperations();
             bulk.Setup<Book>(x => x.ForCollection(col))
                 .WithTable("Books")
@@ -443,8 +534,8 @@ namespace SqlBulkTools.IntegrationTests
                 .AddColumn(x => x.Description)
                 .AddColumn(x => x.ISBN)
                 .AddColumn(x => x.PublishDate)
-                .BulkInsert()
-                .TmpDisableAllNonClusteredIndexes();
+                .TmpDisableAllNonClusteredIndexes()
+                .BulkInsert();
             var watch = System.Diagnostics.Stopwatch.StartNew();
             bulk.CommitTransaction(new SqlConnection("Data Source=DESKTOP-6I9FL7M;Initial Catalog=SqlBulkTools;Integrated Security=True;Pooling=false"));
             watch.Stop();
@@ -457,11 +548,21 @@ namespace SqlBulkTools.IntegrationTests
             BulkOperations bulk = new BulkOperations();
             bulk.Setup<Book>(x => x.ForCollection(col))
                 .WithTable("Books")
-                .WithBulkCopyBatchSize(3000)
+                .WithSqlBulkCopyOptions(SqlBulkCopyOptions.TableLock)
                 .AddAllColumns()
+                .TmpDisableAllNonClusteredIndexes()
                 .BulkInsert();
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            bulk.CommitTransaction(new SqlConnection("Data Source=DESKTOP-6I9FL7M;Initial Catalog=SqlBulkTools;Integrated Security=True;Pooling=false"));
+            bulk.CommitTransaction("SqlBulkToolsTest");
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            return elapsedMs;
+        }
+
+        private long BulkInsertWithEfBulkInsert(IEnumerable<Book> col)
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            _db.BulkInsert(col);
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             return elapsedMs;
@@ -488,6 +589,24 @@ namespace SqlBulkTools.IntegrationTests
             return elapsedMs;
         }
 
+        private long BulkInsertOrUpdateAllColumns(IEnumerable<Book> col)
+        {
+            BulkOperations bulk = new BulkOperations();
+            bulk.Setup<Book>(x => x.ForCollection(col))
+                .WithTable("Books")
+                .AddAllColumns()
+                .BulkInsertOrUpdate()
+                .SetIdentityColumn(x => x.Id)
+                .MatchTargetOn(x => x.ISBN);
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            bulk.CommitTransaction("SqlBulkToolsTest");
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+
+            return elapsedMs;
+        }
+
         private long BulkUpdate(IEnumerable<Book> col)
         {
             BulkOperations bulk = new BulkOperations();
@@ -503,7 +622,7 @@ namespace SqlBulkTools.IntegrationTests
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
             bulk.CommitTransaction("SqlBulkToolsTest");
-            watch.Stop();            
+            watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
 
             return elapsedMs;
@@ -531,6 +650,7 @@ namespace SqlBulkTools.IntegrationTests
             BulkOperations bulk = new BulkOperations();
             bulk.Setup<Book>(x => x.ForCollection(col))
                 .WithTable("Books")
+                .WithSqlBulkCopyOptions(SqlBulkCopyOptions.TableLock)
                 .WithBulkCopyBatchSize(3000)
                 .AddColumn(x => x.Title)
                 .AddColumn(x => x.Price)

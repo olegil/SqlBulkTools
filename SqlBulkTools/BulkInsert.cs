@@ -29,7 +29,8 @@ namespace SqlBulkTools
         private readonly int? _bulkCopyNotifyAfter;
         private readonly int? _bulkCopyBatchSize;
         private readonly HashSet<string> _disableIndexList;
-        private bool _disableAllIndexes;
+        private readonly bool _disableAllIndexes;
+        private readonly SqlBulkCopyOptions _sqlBulkCopyOptions;
 
         /// <summary>
         /// 
@@ -38,6 +39,8 @@ namespace SqlBulkTools
         /// <param name="tableName"></param>
         /// <param name="schema"></param>
         /// <param name="columns"></param>
+        /// <param name="disableIndexList"></param>
+        /// <param name="disableAllIndexes"></param>
         /// <param name="sourceAlias"></param>
         /// <param name="targetAlias"></param>
         /// <param name="customColumnMappings"></param>
@@ -45,10 +48,11 @@ namespace SqlBulkTools
         /// <param name="bulkCopyEnableStreaming"></param>
         /// <param name="bulkCopyNotifyAfter"></param>
         /// <param name="bulkCopyBatchSize"></param>
+        /// <param name="sqlBulkCopyOptions"></param>
         /// <param name="ext"></param>
-        public BulkInsert(IEnumerable<T> list, string tableName, string schema, HashSet<string> columns, string sourceAlias,
+        public BulkInsert(IEnumerable<T> list, string tableName, string schema, HashSet<string> columns, HashSet<string> disableIndexList, bool disableAllIndexes, string sourceAlias,
             string targetAlias, Dictionary<string, string> customColumnMappings, int bulkCopyTimeout, bool bulkCopyEnableStreaming,
-            int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, BulkOperations ext)
+            int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, SqlBulkCopyOptions sqlBulkCopyOptions, BulkOperations ext)
         {
             _list = list;
             _tableName = tableName;
@@ -58,41 +62,19 @@ namespace SqlBulkTools
             _targetAlias = targetAlias;
             _helper = new BulkOperationsHelpers();
             _updateOnList = new List<string>();
-            _disableIndexList = new HashSet<string>();
-            _disableAllIndexes = false;
+            _disableIndexList = disableIndexList;
+            _disableAllIndexes = disableAllIndexes;
             _customColumnMappings = customColumnMappings;
             _bulkCopyTimeout = bulkCopyTimeout;
             _bulkCopyEnableStreaming = bulkCopyEnableStreaming;
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;
             _ext = ext;
+            _sqlBulkCopyOptions = sqlBulkCopyOptions;
             _ext.SetBulkExt(this);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="indexName"></param>
-        /// <returns></returns>
-        public BulkInsert<T> AddTmpDisableNonClusteredIndex(string indexName)
-        {
-            if (indexName == null)
-                throw new ArgumentNullException(nameof(indexName));
 
-            _disableIndexList.Add(indexName);
-
-            return this;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public BulkInsert<T> TmpDisableAllNonClusteredIndexes()
-        {
-            _disableAllIndexes = true;
-            return this;
-        }
 
         void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
         {
@@ -119,11 +101,11 @@ namespace SqlBulkTools
                 using (SqlTransaction transaction = conn.BeginTransaction())
                 {
                     //Bulk insert into temp table
-                    using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
+                    using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, _sqlBulkCopyOptions, transaction))
                     {
                         try
                         {
-                            bulkcopy.DestinationTableName = _tableName;
+                            bulkcopy.DestinationTableName = _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName);
                             _helper.MapColumns(bulkcopy, _columns, _customColumnMappings);
 
                             _helper.SetSqlBulkCopySettings(bulkcopy, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
@@ -147,12 +129,13 @@ namespace SqlBulkTools
                                 command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Rebuild, _tableName, _disableIndexList, _disableAllIndexes);
                                 command.ExecuteNonQuery();
                             }
+
                             transaction.Commit();
 
                             bulkcopy.Close();
                         }
 
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             transaction.Rollback();
                             throw;
@@ -199,11 +182,11 @@ namespace SqlBulkTools
                 using (SqlTransaction transaction = conn.BeginTransaction())
                 {
                     //Bulk insert into temp table
-                    using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
+                    using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, _sqlBulkCopyOptions, transaction))
                     {
                         try
                         {
-                            bulkcopy.DestinationTableName = _tableName;
+                            bulkcopy.DestinationTableName = _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName);
                             _helper.MapColumns(bulkcopy, _columns, _customColumnMappings);
 
                             _helper.SetSqlBulkCopySettings(bulkcopy, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
@@ -232,7 +215,7 @@ namespace SqlBulkTools
                             bulkcopy.Close();
                         }
 
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             transaction.Rollback();
                             throw;

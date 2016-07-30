@@ -31,11 +31,11 @@ namespace SqlBulkTools
         /// <summary>
         /// Set the name of table for operation to take place. Registering a table is Required.
         /// </summary>
-        /// <param name="table">Name of the table.</param>
+        /// <param name="tableName">Name of the table.</param>
         /// <returns></returns>
-        public Table<T> WithTable(string table)
+        public Table<T> WithTable(string tableName)
         {
-            return new Table<T>(_list, table, _sourceAlias, _targetAlias, _ext);
+            return new Table<T>(_list, tableName, _sourceAlias, _targetAlias, _ext);
         }
     }
 }
