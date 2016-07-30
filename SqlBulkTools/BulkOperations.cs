@@ -22,7 +22,7 @@ namespace SqlBulkTools
         /// <summary>
         /// Commits a transaction to database. A valid setup must exist for operation to be 
         /// successful. Notes: (1) The connectionName parameter is a name that you provide to 
-        /// uniquely identify a connection string so that it can be retrieved at run time
+        /// uniquely identify a connection string so that it can be retrieved at run time.
         /// </summary>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
@@ -46,7 +46,7 @@ namespace SqlBulkTools
         /// <summary>
         /// Commits a transaction to database. A valid setup must exist for operation to be 
         /// successful. Notes: (1) The connectionName parameter is a name that you provide to 
-        /// uniquely identify a connection string so that it can be retrieved at run time
+        /// uniquely identify a connection string so that it can be retrieved at run time.
         /// </summary>
         /// <param name="connectionName"></param>
         /// <param name="credentials"></param>
@@ -70,8 +70,7 @@ namespace SqlBulkTools
 
         /// <summary>
         /// Commits a transaction to database. A valid setup must exist for operation to be 
-        /// successful. Notes: (1) The connectionName parameter is a name that you provide to 
-        /// uniquely identify a connection string so that it can be retrieved at run time
+        /// successful. 
         /// </summary>
         /// <param name="connection"></param>
         /// <exception cref="ArgumentNullException"></exception>
@@ -89,9 +88,9 @@ namespace SqlBulkTools
 
 
         /// <summary>
-        ///         /// Commits a transaction to database. A valid setup must exist for operation to be 
-        /// successful. Notes: (1) The connectionName parameter is a name that you provide to 
-        /// uniquely identify a connection string so that it can be retrieved at run time        /// </summary>
+        /// Commits a transaction to database. A valid setup must exist for operation to be 
+        /// successful. 
+        /// </summary>
         /// <param name="connection"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>

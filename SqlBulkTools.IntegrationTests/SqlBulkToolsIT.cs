@@ -420,42 +420,7 @@ namespace SqlBulkTools.IntegrationTests
         }
 
         [Test]
-        public void SqlBulkTools_WithConflictingTableName_DeletesAndInsertsToCorrectTable()
-        {
-            // Arrange           
-            BulkOperations bulk = new BulkOperations();
-
-            List<SchemaTest1> conflictingSchemaCol = new List<SchemaTest1>();
-
-            for (int i = 0; i < 30; i++)
-            {
-                conflictingSchemaCol.Add(new SchemaTest1() { ColumnA = "ColumnA " + i});
-            }
-
-            // Act            
-            bulk.Setup<SchemaTest1>(
-                x => x.ForCollection(_db.SchemaTest1.ToList()))
-                .WithTable("SchemaTest")
-                .WithSchema("AnotherSchema")
-                .AddAllColumns()
-                .BulkDelete(); // Remove existing rows
-
-            
-            bulk.Setup<SchemaTest1>(x => x.ForCollection(conflictingSchemaCol))
-                .WithTable("SchemaTest")
-                .WithSchema("AnotherSchema")
-                .AddAllColumns()
-                .BulkInsert(); // Add new rows
-
-            bulk.CommitTransaction("SqlBulkToolsTest");
-
-            // Assert
-            Assert.IsNotNull(_db.SchemaTest1.FirstOrDefault());
-
-        }
-
-        [Test]
-        public void SqlBulkTools_IdentityColumnSet_UpdatesTarget()
+        public void SqlBulkTools_IdentityColumnSet_UpdatesTargetWhenSetIdentityColumn()
         {
             // Arrange
             BulkDelete(_db.Books);
@@ -481,6 +446,142 @@ namespace SqlBulkTools.IntegrationTests
             // Assert
             Assert.AreEqual(testDesc, _db.Books.First().Description);
         }
+
+        [Test]
+        public void SqlBulkTools_WithConflictingTableName_DeletesAndInsertsToCorrectTable()
+        {
+            // Arrange           
+            BulkOperations bulk = new BulkOperations();
+
+            List<SchemaTest2> conflictingSchemaCol = new List<SchemaTest2>();
+
+            for (int i = 0; i < 30; i++)
+            {
+                conflictingSchemaCol.Add(new SchemaTest2() { ColumnA = "ColumnA " + i});
+            }
+
+            // Act            
+            bulk.Setup<SchemaTest2>(
+                x => x.ForCollection(_db.SchemaTest2.ToList()))
+                .WithTable("SchemaTest")
+                .WithSchema("AnotherSchema")
+                .AddAllColumns()
+                .BulkDelete(); // Remove existing rows
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            bulk.Setup<SchemaTest2>(x => x.ForCollection(conflictingSchemaCol))
+                .WithTable("SchemaTest")
+                .WithSchema("AnotherSchema")
+                .AddAllColumns()
+                .BulkInsert(); // Add new rows
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            // Assert
+            Assert.IsTrue(_db.SchemaTest2.Any());
+
+        }
+
+        [Test]
+        public void SqlBulkTools_BulkDeleteOnId_AddItemsThenRemovesAllItems()
+        {
+            // Arrange           
+            BulkOperations bulk = new BulkOperations();
+
+            List<SchemaTest1> col = new List<SchemaTest1>();
+
+            for (int i = 0; i < 30; i++)
+            {
+                col.Add(new SchemaTest1() { ColumnB = "ColumnA " + i });
+            }
+
+            // Act
+
+            bulk.Setup<SchemaTest1>(x => x.ForCollection(col))
+                .WithTable("SchemaTest") // Don't specify schema. Default schema dbo is used. 
+                .AddAllColumns()
+                .BulkInsert();
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            var allItems = _db.SchemaTest1.ToList();
+
+            bulk.Setup<SchemaTest1>(x => x.ForCollection(allItems))
+                .WithTable("SchemaTest") 
+                .AddColumn(x => x.Id)
+                .BulkDelete()
+                .MatchTargetOn(x => x.Id);
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            // Assert
+
+            Assert.IsFalse(_db.SchemaTest1.Any());
+        }
+
+        [Test]
+        public void SqlBulkTools_BulkUpdate_PartialUpdateOnlyUpdatesSelectedColumns()
+        {
+            // Arrange
+            BulkOperations bulk = new BulkOperations();
+            _bookCollection = _randomizer.GetRandomCollection(30);
+
+            BulkDelete(_db.Books.ToList());
+            BulkInsert(_bookCollection);
+
+            // Update just the price on element 5
+            int elemToUpdate = 5;
+            decimal updatedPrice = 9999999;
+            var originalElement = _bookCollection.ElementAt(elemToUpdate);
+            _bookCollection.ElementAt(elemToUpdate).Price = updatedPrice;
+
+            // Act           
+            bulk.Setup<Book>(x => x.ForCollection(_bookCollection))
+                .WithTable("Books")
+                .AddColumn(x => x.Price)
+                .BulkUpdate()
+                .MatchTargetOn(x => x.ISBN);
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            // Assert
+            Assert.AreEqual(updatedPrice, _db.Books.Single(x => x.ISBN == originalElement.ISBN).Price);
+
+            /* Profiler shows: MERGE INTO [SqlBulkTools].[dbo].[Books] WITH (HOLDLOCK) AS Target USING #TmpTable 
+             * AS Source ON Target.ISBN = Source.ISBN WHEN MATCHED THEN UPDATE SET Target.Price = Source.Price, 
+             * Target.ISBN = Source.ISBN ; DROP TABLE #TmpTable; */
+
+        }
+
+        [Test]
+        public void SqlBulkTools_BulkInsertWithColumnMappings_CorrectlyMapsColumns()
+        {
+            BulkOperations bulk = new BulkOperations();
+
+            List<CustomColumnMappingTest> col = new List<CustomColumnMappingTest>();
+
+            for (int i = 0; i < 30; i++)
+            {
+                col.Add(new CustomColumnMappingTest() { NaturalId = i, ColumnXIsDifferent = "ColumnX " + i, ColumnYIsDifferentInDatabase = i});
+            }
+
+            _db.CustomColumnMappingTest.RemoveRange(_db.CustomColumnMappingTest.ToList());
+            _db.SaveChanges();
+
+            bulk.Setup<CustomColumnMappingTest>(x => x.ForCollection(col))
+                .WithTable("CustomColumnMappingTests")
+                .AddAllColumns()
+                .CustomColumnMapping(x => x.ColumnXIsDifferent, "ColumnX")
+                .CustomColumnMapping(x => x.ColumnYIsDifferentInDatabase, "ColumnY")
+                .BulkInsert();
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            // Assert
+            Assert.IsTrue(_db.CustomColumnMappingTest.Any());
+        }
+
 
         private void AppendToLogFile(string text)
         {

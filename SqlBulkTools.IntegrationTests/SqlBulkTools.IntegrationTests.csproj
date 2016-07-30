@@ -66,13 +66,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Model\CustomColumnMappingTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlBulkToolsIT.cs" />
     <Compile Include="Model\Book.cs" />
     <Compile Include="Model\BookDto.cs" />
     <Compile Include="BookRandomizer.cs" />
-    <Compile Include="Model\SchemaTest1.cs" />
     <Compile Include="Model\SchemaTest2.cs" />
+    <Compile Include="Model\SchemaTest1.cs" />
     <Compile Include="TestContext.cs" />
   </ItemGroup>
   <ItemGroup>
