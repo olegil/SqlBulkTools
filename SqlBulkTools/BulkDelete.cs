@@ -196,7 +196,8 @@ namespace SqlBulkTools
 
             if (_matchTargetOn.Count == 0)
             {
-                throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. This is usually the primary key of your table but can also be more than one column depending on your business rules.");
+                throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. " +
+                                                    "This is usually the primary key of your table but can also be more than one column depending on your business rules.");
             }
 
             DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);

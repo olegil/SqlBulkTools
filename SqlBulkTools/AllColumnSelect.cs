@@ -89,7 +89,7 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// Disables non-clustered index. You can select One or Many non-clustered indexes. This option should be considered on 
+        /// Disables non-clustered index. You can select One to Many non-clustered indexes. This option should be considered on 
         /// a case-by-case basis. Understand the consequences before using this option.  
         /// </summary>
         /// <param name="indexName"></param>
@@ -117,8 +117,8 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// A bulk insert will attempt to insert all records. If you have any unique constraints, these must be respected. 
-        /// Notes: (1) Only the columns configured (via AddColumn) will be evaluated.
+        /// A bulk insert will attempt to insert all records. If you have any unique constraints on columns, these must be respected. 
+        /// Notes: (1) Only the columns configured (via AddColumn) will be evaluated. (3) Use AddAllColumns to add all columns in table. 
         /// </summary>
         /// <returns></returns>
         public BulkInsert<T> BulkInsert()
@@ -131,7 +131,7 @@ namespace SqlBulkTools
         /// <summary>
         /// A bulk insert or update is also known as bulk upsert or merge. All matching rows from the source will be updated.
         /// Any unique rows not found in target but exist in source will be added. Notes: (1) BulkInsertOrUpdate requires at least 
-        /// one MatchTargetOn property to be configured. (2) Only the columns configured (via AddColumn) 
+        /// one MatchTargetOn property to be configured. (2) Only the columns configured (via AddColumn) (3) Use AddAllColumns to add all columns in table.
         /// will be evaluated. 
         /// </summary>
         /// <returns></returns>
@@ -144,7 +144,7 @@ namespace SqlBulkTools
 
         /// <summary>
         /// A bulk update will attempt to update any matching records. Notes: (1) BulkUpdate requires at least one MatchTargetOn 
-        /// property to be configured. (2) Only the columns configured (via AddColumn) will be evaluated. 
+        /// property to be configured. (2) Only the columns configured (via AddColumn) will be evaluated. (3) Use AddAllColumns to add all columns in table.
         /// </summary>
         /// <returns></returns>
         public BulkUpdate<T> BulkUpdate()
@@ -156,8 +156,7 @@ namespace SqlBulkTools
 
         /// <summary>
         /// A bulk delete will delete records when matched. Consider using a DTO with only the needed information (e.g. PK) Notes: 
-        /// (1) BulkUpdate requires at least one MatchTargetOn property to be configured. (2) Only the columns configured (via AddColumn) 
-        /// will be evaluated. 
+        /// (1) BulkUpdate requires at least one MatchTargetOn property to be configured.
         /// </summary>
         /// <returns></returns>
         public BulkDelete<T> BulkDelete()

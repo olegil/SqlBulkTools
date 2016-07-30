@@ -23,7 +23,6 @@ namespace SqlBulkTools.IntegrationTests
         [OneTimeSetUp]
         public void Setup()
         {
-
             _db = new TestContext();
             _randomizer = new BookRandomizer();
             Database.SetInitializer(new DropCreateDatabaseAlways<TestContext>());
