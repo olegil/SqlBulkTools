@@ -38,14 +38,6 @@
       <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="EntityFramework.BulkInsert, Version=6.0.2.8, Culture=neutral, PublicKeyToken=630a17433349cb76, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.BulkInsert-ef6.6.0.2.8\lib\Net45\EntityFramework.BulkInsert.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="EntityFramework.MappingAPI, Version=6.0.0.7, Culture=neutral, PublicKeyToken=7ee2e825d201459e, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.MappingAPI.6.0.0.7\lib\net45\EntityFramework.MappingAPI.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
       <Private>True</Private>
@@ -76,12 +68,12 @@
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlBulkToolsIT.cs" />
-    <Compile Include="TestEnvironment\Book.cs" />
-    <Compile Include="TestEnvironment\BookDto.cs" />
-    <Compile Include="TestEnvironment\BookRandomizer.cs" />
-    <Compile Include="TestEnvironment\SchemaTestCustomSchemaSameName.cs" />
-    <Compile Include="TestEnvironment\SchemaTestDefaultSchema.cs" />
-    <Compile Include="TestEnvironment\TestContext.cs" />
+    <Compile Include="Model\Book.cs" />
+    <Compile Include="Model\BookDto.cs" />
+    <Compile Include="BookRandomizer.cs" />
+    <Compile Include="Model\SchemaTest1.cs" />
+    <Compile Include="Model\SchemaTest2.cs" />
+    <Compile Include="TestContext.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SqlBulkTools\SqlBulkTools.csproj">

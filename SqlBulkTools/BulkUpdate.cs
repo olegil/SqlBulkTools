@@ -36,7 +36,7 @@ namespace SqlBulkTools
         private readonly BulkOperationsHelpers _helper;
 
         /// <summary>
-        /// 
+        /// Updates existing records in bulk. 
         /// </summary>
         /// <param name="list"></param>
         /// <param name="tableName"></param>
@@ -99,7 +99,8 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// 
+        /// Sets the identity column for the table. Required if an Identity column exists in table and one of the two 
+        /// following conditions is met: (1) MatchTargetOn list contains an identity column (2) AddAllColumns is used in setup. 
         /// </summary>
         /// <param name="columnName"></param>
         /// <returns></returns>

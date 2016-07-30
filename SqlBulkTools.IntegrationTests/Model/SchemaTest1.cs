@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SqlBulkTools.IntegrationTests.TestEnvironment
+namespace SqlBulkTools.IntegrationTests.Model
 {
     [Table("SchemaTest", Schema = "AnotherSchema")]
-    public class SchemaTestCustomSchemaSameName
+    public class SchemaTest1
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Key]

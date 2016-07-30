@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SqlBulkTools.IntegrationTests.TestEnvironment
+namespace SqlBulkTools.IntegrationTests.Model
 {
     [Table("SchemaTest")]
-    public class SchemaTestDefaultSchema
+    public class SchemaTest2
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Key]

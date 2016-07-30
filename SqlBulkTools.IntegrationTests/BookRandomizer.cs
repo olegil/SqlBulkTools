@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Ploeh.AutoFixture;
 using Ploeh.AutoFixture.Kernel;
-using SqlBulkTools.IntegrationTests.TestModel;
+using SqlBulkTools.IntegrationTests.Model;
 
-namespace SqlBulkTools.IntegrationTests.TestEnvironment
+namespace SqlBulkTools.IntegrationTests
 {
 #pragma warning disable 618
     public class BookRandomizer
