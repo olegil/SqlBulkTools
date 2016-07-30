@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
+using SqlBulkTools.UnitTests.Model;
 
 namespace SqlBulkTools.UnitTests
 {

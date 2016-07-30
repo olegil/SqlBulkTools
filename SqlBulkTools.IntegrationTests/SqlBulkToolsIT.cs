@@ -1,15 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Migrations;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Ploeh.AutoFixture;
-using SqlBulkTools.IntegrationTests.TestEnvironment;
-using TestContext = SqlBulkTools.IntegrationTests.TestContext;
-using EntityFramework.BulkInsert.Extensions;
 using SqlBulkTools.IntegrationTests.Model;
 
 namespace SqlBulkTools.IntegrationTests

@@ -49,7 +49,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="ModelWithMixedTypes.cs" />
+    <Compile Include="Model\ModelWithMixedTypes.cs" />
     <Compile Include="SqlBulkToolsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
