@@ -87,7 +87,7 @@ bulk.CommitTransaction("DefaultConnection");
 Notes: 
 
 (1) It's possible to use AddAllColumns for operations BulkInsert/BulkInsertOrUpdate/BulkUpdate. 
-(2) MatchTargetOn is mandatory for BulkUpdate and BulkInsertOrUpdate... unless you want to eat 
+(2) MatchTargetOn is mandatory for BulkUpdate, BulkInsertOrUpdate and BulkDelete... unless you want to eat 
 an InvalidOperationException. 
 (3) If model property name does not match the actual SQL column name, you can set up a custom 
 mapping. An example of this is shown in a dedicated section somewhere in this Readme...
@@ -118,7 +118,7 @@ bulk.Setup<Book>(x => x.ForCollection(books))
 
 (1) Whilst it's possible to use AddAllColumns for BulkUpdate, using AddColumn for only the columns 
 that need to be updated leads to performance gains. 
-(2) MatchTargetOn is mandatory for BulkUpdate and BulkInsertOrUpdate... unless you want to eat 
+(2) MatchTargetOn is mandatory for BulkUpdate, BulkInsertOrUpdate and BulkDelete... unless you want to eat 
 an InvalidOperationException. 
 (3) MatchTargetOn can be called multiple times for more than one column to match on. 
 (4) If your model contains an identity column and it's included (via AddAllColumns, AddColumn or 
@@ -149,6 +149,15 @@ bulk.Setup<BookDto>(x => x.ForCollection(books))
 .MatchTargetOn(x => x.ISBN)
 
 bulk.CommitTransaction("DefaultConnection");
+
+/* 
+Notes: 
+
+(1) Avoid using AddAllColumns for BulkDelete. 
+(2) MatchTargetOn is mandatory for BulkUpdate, BulkInsertOrUpdate and BulkDelete... unless you want to eat 
+an InvalidOperationException.
+*/
+
 ```
 
 ###Custom Mappings
