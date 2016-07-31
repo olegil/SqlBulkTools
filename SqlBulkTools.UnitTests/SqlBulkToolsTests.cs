@@ -184,20 +184,6 @@ namespace SqlBulkTools.UnitTests
         }
 
         [Test]
-        public void BuildOperationsHelpers_RebuildSchema_WithDefaultSchemaName()
-        {
-            // Arrange
-            string expected = "[db].[@defaultSchema].[TableName]";
-            BulkOperationsHelpers helper = new BulkOperationsHelpers();
-
-            // Act
-            string result = helper.GetFullQualifyingTableName("db", null, "TableName");
-
-            // Act
-            Assert.AreEqual(expected, result);
-        }
-
-        [Test]
         public void BuilOperationsHelpers_GetIndexManagementCmd_WithListOfIndexesReturnsCorrectCmd()
         {
             // Arrange

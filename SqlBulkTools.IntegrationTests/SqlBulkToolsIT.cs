@@ -613,7 +613,7 @@ namespace SqlBulkTools.IntegrationTests
             BulkOperations bulk = new BulkOperations();
             bulk.Setup<Book>(x => x.ForCollection(col))
                 .WithTable("Books")
-                .WithBulkCopyBatchSize(3000)
+                .WithBulkCopyBatchSize(5000)
                 .AddColumn(x => x.Title)
                 .AddColumn(x => x.Price)
                 .AddColumn(x => x.Description)
