@@ -1,7 +1,7 @@
 <img src="http://gregnz.com/images/SqlBulkTools/icon-large.png" alt="SqlBulkTools"> 
 #SqlBulkTools
 -----------------------------
-Welcome to Version 2! High-performance C# Bulk operations for MSSQL Server. Supports Bulk Insert, Update, Delete & Merge. Uses SQLBulkCopy under the hood. Works with SQL Server (starting from 2008) and Azure SQL Database. Please leave a Github star if you find this project useful.
+Welcome to Version 2! High-performance C# Bulk operations for SQL Server (starting from 2008) and Azure SQL Database. Supports Bulk Insert, Update, Delete & Merge. Uses SQLBulkCopy under the hood. Please leave a Github star if you find this project useful. 
 
 ##Examples
 
