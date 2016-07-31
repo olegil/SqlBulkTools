@@ -48,7 +48,7 @@ bulk.CommitTransaction("DefaultConnection");
 /* 
 Notes: 
 
-(1) It's also possible to add each column manually via the AddColumn method. Bare in mind that 
+(1) It's also possible to add each column manually via the AddColumn method. Bear in mind that 
 columns that are not added will be assigned their default value according to the property type. 
 (2) It's possible to disable non-clustered indexes during the transaction. See advanced section 
 for more info. 
@@ -95,7 +95,7 @@ mapping. An example of this is shown in a dedicated section somewhere in this Re
 comes responsibility. Use at your own risk.
 (5) If your model contains an identity column and it's included (via AddAllColumns, AddColumn or 
 MatchTargetOn) in your setup, you must use SetIdentityColumn to mark it as your identity column. 
-Identity columns are immutable and autoincremented. You can of course update based on an identity 
+Identity columns are immutable and auto incremented. You can of course update based on an identity 
 column (using MatchTargetOn) but just make sure to use SetIdentityColumn to mark it as an 
 identity column. 
 */
@@ -123,7 +123,7 @@ an InvalidOperationException.
 (3) MatchTargetOn can be called multiple times for more than one column to match on. 
 (4) If your model contains an identity column and it's included (via AddAllColumns, AddColumn or 
 MatchTargetOn) in your setup, you must use SetIdentityColumn to mark it as your identity column. 
-Identity columns are immutable and autoincremented. You can of course update based on an identity 
+Identity columns are immutable and auto incremented. You can of course update based on an identity 
 column (using MatchTargetOn) but just make sure to use SetIdentityColumn to mark it as an 
 identity column.  
 */
@@ -224,7 +224,7 @@ Setup<T>(Func<Setup<T>, CollectionSelect<T>> list)
 bulk.Setup<Book>(x => x.ForCollection(col)) 
 
 /* Setup is the main entry point. Because of the vast flexibility possible with SqlBulkTools, 
-a fluent interface helps to guide you through setup procecss. This design choice was made to 
+a fluent interface helps to guide you through setup process. This design choice was made to 
 make it easier for you to use SqlBulkTools. Options that are not relevant to a particular 
 operation are not exposed. For example the MatchTargetOn method is not accessible from the 
 BulkInsert method because it would not make sense. */
@@ -238,7 +238,7 @@ CommitTransactionAsync(string connectionName, SqlCredential credentials = null)
 CommitTransactionAsync(SqlConnection connection)
 
 /* A transaction will only take place if CommitTransaction is called. CommitTransaction is 
-always called after a valid setup is built and Async flavours are included for scalibility. 
+always called after a valid setup is built and Async flavours are included for scalability. 
 CommitTransaction and CommmitTransactionAsync respectively are overloaded. It's up to you how 
 you would like to pass in your SQL configuration.  
  */
