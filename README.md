@@ -48,9 +48,10 @@ bulk.CommitTransaction("DefaultConnection");
 /* 
 Notes: 
 
-(1) It's also possible to add each column manually via the AddColumn method. Bare in mind that columns 
-that are not added will be assigned their default value according to the property type. 
-(2) It's possible to disable non-clustered indexes during the transaction. See advanced section for more info. 
+(1) It's also possible to add each column manually via the AddColumn method. Bare in mind that 
+columns that are not added will be assigned their default value according to the property type. 
+(2) It's possible to disable non-clustered indexes during the transaction. See advanced section 
+for more info. 
 */
 
 ```
@@ -86,14 +87,17 @@ bulk.CommitTransaction("DefaultConnection");
 Notes: 
 
 (1) It's possible to use AddAllColumns for operations BulkInsert/BulkInsertOrUpdate/BulkUpdate. 
-(2) MatchTargetOn is mandatory for BulkUpdate and BulkInsertOrUpdate... unless you want to eat an InvalidOperationException. 
-(3) If model property name does not match the actual SQL column name, you can set up a custom mapping. An example of this 
-is shown in a dedicated section somewhere in this Readme...
-(4) BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. With power comes 
-responsibility. Use at your own risk.
-(5) If your model contains an identity column and it's included (via AddAllColumns, AddColumn or MatchTargetOn) in your setup, you 
-must use SetIdentityColumn to mark it as your identity column. Identity columns are immutable and autoincremented. You can of course 
-update based on an identity column (using MatchTargetOn) but just make sure to use SetIdentityColumn to mark it as an identity column. 
+(2) MatchTargetOn is mandatory for BulkUpdate and BulkInsertOrUpdate... unless you want to eat 
+an InvalidOperationException. 
+(3) If model property name does not match the actual SQL column name, you can set up a custom 
+mapping. An example of this is shown in a dedicated section somewhere in this Readme...
+(4) BulkInsertOrUpdate also supports DeleteWhenNotMatched which is false by default. With power 
+comes responsibility. Use at your own risk.
+(5) If your model contains an identity column and it's included (via AddAllColumns, AddColumn or 
+MatchTargetOn) in your setup, you must use SetIdentityColumn to mark it as your identity column. 
+Identity columns are immutable and autoincremented. You can of course update based on an identity 
+column (using MatchTargetOn) but just make sure to use SetIdentityColumn to mark it as an 
+identity column. 
 */
 ```
 
@@ -112,13 +116,16 @@ bulk.Setup<Book>(x => x.ForCollection(books))
 
 /* Notes: 
 
-(1) Whilst it's possible to use AddAllColumns for BulkUpdate, using AddColumn for only the columns that need to be updated leads 
-to performance gains. 
-(2) MatchTargetOn is mandatory for BulkUpdate and BulkInsertOrUpdate... unless you want to eat an InvalidOperationException. 
+(1) Whilst it's possible to use AddAllColumns for BulkUpdate, using AddColumn for only the columns 
+that need to be updated leads to performance gains. 
+(2) MatchTargetOn is mandatory for BulkUpdate and BulkInsertOrUpdate... unless you want to eat 
+an InvalidOperationException. 
 (3) MatchTargetOn can be called multiple times for more than one column to match on. 
-(4) If your model contains an identity column and it's included (via AddAllColumns, AddColumn or MatchTargetOn) in your setup, you 
-must use SetIdentityColumn to mark it as your identity column. Identity columns are immutable and autoincremented. You can of course 
-update based on an identity column (using MatchTargetOn) but just make sure to use SetIdentityColumn to mark it as an identity column. 
+(4) If your model contains an identity column and it's included (via AddAllColumns, AddColumn or 
+MatchTargetOn) in your setup, you must use SetIdentityColumn to mark it as your identity column. 
+Identity columns are immutable and autoincremented. You can of course update based on an identity 
+column (using MatchTargetOn) but just make sure to use SetIdentityColumn to mark it as an 
+identity column.  
 */
 
 bulk.CommitTransaction("DefaultConnection");
@@ -126,7 +133,8 @@ bulk.CommitTransaction("DefaultConnection");
 ###BulkDelete
 ---------------
 ```c#
-// Tip: Since you only need to match a key, use a DTO containing only the column(s) needed for performance gains.
+/* Tip: Considering you only need to match a key, use a DTO containing only the column(s) needed for 
+performance gains. */
 
 public class BookDto {
     public string ISBN {get; set;}
@@ -146,8 +154,9 @@ bulk.CommitTransaction("DefaultConnection");
 ###Custom Mappings
 ---------------
 ```c#
-/* If the property names in your model don't match the column names in the corresponding table, you can use a custom column mapping.
-For the below example, assume that there is a 'BookTitle' column name in database which is defined in the model as 'Title' */
+/* If the property names in your model don't match the column names in the corresponding table, you 
+can use a custom column mapping. For the below example, assume that there is a 'BookTitle' column 
+name in database which is defined in the model as 'Title' */
 
 books = GetBooks();
 
@@ -177,9 +186,10 @@ bulk.Setup<Book>(x => x.ForCollection(books))
 .WithSqlBulkCopyOptions(SqlBulkCopyOptions.TableLock)
 .AddColumn(x =>  // ........
 
-/* SqlBulkTools gives you the ability to disable all or selected non-clustered indexes during the transaction. Indexes are rebuilt 
-once the transaction is completed. If at any time during the transaction an exception arises, the transaction is safely rolled back 
-and indexes revert to their initial state. */
+/* SqlBulkTools gives you the ability to disable all or selected non-clustered indexes during 
+the transaction. Indexes are rebuilt once the transaction is completed. If at any time during 
+the transaction an exception arises, the transaction is safely rolled back and indexes revert 
+to their initial state. */
 
 // Example
 
@@ -213,9 +223,11 @@ Setup<T>(Func<Setup<T>, CollectionSelect<T>> list)
 // Example usage where col implements IEnumerable and is of type Book
 bulk.Setup<Book>(x => x.ForCollection(col)) 
 
-/* Setup is the main entry point. Because of the vast flexibility possible with SqlBulkTools, a fluent interface helps to guide you through 
-setup procecss. This design choice was made to make it easier for you to use SqlBulkTools. Options that are not relevant to a particular 
-operation are not exposed. For example the MatchTargetOn method is not accessible from the BulkInsert method because it would not make sense. */
+/* Setup is the main entry point. Because of the vast flexibility possible with SqlBulkTools, 
+a fluent interface helps to guide you through setup procecss. This design choice was made to 
+make it easier for you to use SqlBulkTools. Options that are not relevant to a particular 
+operation are not exposed. For example the MatchTargetOn method is not accessible from the 
+BulkInsert method because it would not make sense. */
 ```
 
 #####CommitTransaction
@@ -225,9 +237,10 @@ CommitTransaction(SqlConnection connection)
 CommitTransactionAsync(string connectionName, SqlCredential credentials = null)
 CommitTransactionAsync(SqlConnection connection)
 
-/* A transaction will only take place if CommitTransaction is called. CommitTransaction is always called after a valid setup is built and Async 
-flavours are included for scalibility. CommitTransaction and CommmitTransactionAsync respectively are overloaded. It's up to you how you would 
-like to pass in your SQL configuration.  
+/* A transaction will only take place if CommitTransaction is called. CommitTransaction is 
+always called after a valid setup is built and Async flavours are included for scalibility. 
+CommitTransaction and CommmitTransactionAsync respectively are overloaded. It's up to you how 
+you would like to pass in your SQL configuration.  
  */
 
 ```
