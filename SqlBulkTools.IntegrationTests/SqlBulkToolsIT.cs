@@ -581,6 +581,32 @@ namespace SqlBulkTools.IntegrationTests
             Assert.IsTrue(_db.CustomColumnMappingTest.Any());
         }
 
+        [Test]
+        public void SqlBulkTools_WhenUsingReservedSqlKeywords()
+        {
+            _db.ReservedColumnNameTest.RemoveRange(_db.ReservedColumnNameTest.ToList());
+            BulkOperations bulk = new BulkOperations();
+
+            var list = new List<ReservedColumnNameTest>();
+
+            for (int i = 0; i < 30; i++)
+            {
+                list.Add(new ReservedColumnNameTest() {Key = i});
+            }
+
+            bulk.Setup<ReservedColumnNameTest>(x => x.ForCollection(list))
+                .WithTable("ReservedColumnNameTests")
+                .AddAllColumns()
+                .BulkInsertOrUpdate()
+                .MatchTargetOn(x => x.Id)
+                .SetIdentityColumn(x => x.Id);
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            Assert.IsTrue(_db.ReservedColumnNameTest.Any());
+
+        }
+
 
         private void AppendToLogFile(string text)
         {
@@ -622,7 +648,7 @@ namespace SqlBulkTools.IntegrationTests
                 .TmpDisableAllNonClusteredIndexes()
                 .BulkInsert();
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            bulk.CommitTransaction(new SqlConnection("Data Source=DESKTOP-6I9FL7M;Initial Catalog=SqlBulkTools;Integrated Security=True;Pooling=false"));
+            bulk.CommitTransaction("SqlBulkToolsTest");
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             return elapsedMs;

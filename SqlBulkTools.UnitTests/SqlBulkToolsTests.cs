@@ -19,7 +19,7 @@ namespace SqlBulkTools.UnitTests
             var result = sut.BuildJoinConditionsForUpdateOrInsert(joinOnList.ToArray(), "Source", "Target");
 
             // Assert
-            Assert.AreEqual("ON Target.MarketPlaceId = Source.MarketPlaceId AND Target.FK_BusinessId = Source.FK_BusinessId AND Target.AddressId = Source.AddressId ", result);
+            Assert.AreEqual("ON [Target].[MarketPlaceId] = [Source].[MarketPlaceId] AND [Target].[FK_BusinessId] = [Source].[FK_BusinessId] AND [Target].[AddressId] = [Source].[AddressId] ", result);
         }
 
         [Test]
@@ -33,7 +33,7 @@ namespace SqlBulkTools.UnitTests
             var result = sut.BuildJoinConditionsForUpdateOrInsert(joinOnList.ToArray(), "Source", "Target");
 
             // Assert
-            Assert.AreEqual("ON Target.MarketPlaceId = Source.MarketPlaceId AND Target.FK_BusinessId = Source.FK_BusinessId ", result);
+            Assert.AreEqual("ON [Target].[MarketPlaceId] = [Source].[MarketPlaceId] AND [Target].[FK_BusinessId] = [Source].[FK_BusinessId] ", result);
         }
 
         [Test]
@@ -47,7 +47,7 @@ namespace SqlBulkTools.UnitTests
             var result = sut.BuildJoinConditionsForUpdateOrInsert(joinOnList.ToArray(), "Source", "Target");
 
             // Assert
-            Assert.AreEqual("ON Target.MarketPlaceId = Source.MarketPlaceId ", result);
+            Assert.AreEqual("ON [Target].[MarketPlaceId] = [Source].[MarketPlaceId] ", result);
         }
 
         [Test]
@@ -56,7 +56,7 @@ namespace SqlBulkTools.UnitTests
             // Arrange
             var updateOrInsertColumns = GetTestParameters();
             var expected =
-                "UPDATE SET Target.id = Source.id, Target.Name = Source.Name, Target.Town = Source.Town, Target.Email = Source.Email, Target.IsCool = Source.IsCool ";
+                "UPDATE SET [Target].[id] = [Source].[id], [Target].[Name] = [Source].[Name], [Target].[Town] = [Source].[Town], [Target].[Email] = [Source].[Email], [Target].[IsCool] = [Source].[IsCool] ";
             var sut = new BulkOperationsHelpers();
 
             // Act
@@ -75,7 +75,7 @@ namespace SqlBulkTools.UnitTests
             updateOrInsertColumns.Add("Id");
 
             var expected =
-                "UPDATE SET Target.Id = Source.Id ";
+                "UPDATE SET [Target].[Id] = [Source].[Id] ";
             var sut = new BulkOperationsHelpers();
 
             // Act
@@ -92,7 +92,7 @@ namespace SqlBulkTools.UnitTests
             // Arrange
             var updateOrInsertColumns = GetTestParameters();
             var expected =
-                "INSERT (Name, Town, Email, IsCool) values (Source.Name, Source.Town, Source.Email, Source.IsCool)";
+                "INSERT ([Name], [Town], [Email], [IsCool]) values ([Source].[Name], [Source].[Town], [Source].[Email], [Source].[IsCool])";
             var sut = new BulkOperationsHelpers();
 
             // Act
@@ -110,7 +110,7 @@ namespace SqlBulkTools.UnitTests
             var updateOrInsertColumns = new HashSet<string>();
             updateOrInsertColumns.Add("Id");
             var expected =
-                "INSERT (Id) values (Source.Id)";
+                "INSERT ([Id]) values ([Source].[Id])";
             var sut = new BulkOperationsHelpers();
 
             // Act

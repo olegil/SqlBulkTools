@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Model\CustomColumnMappingTest.cs" />
+    <Compile Include="Model\ReservedColumnNameTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlBulkToolsIT.cs" />
     <Compile Include="Model\Book.cs" />

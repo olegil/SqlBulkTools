@@ -36,15 +36,15 @@ namespace SqlBulkTools
 
             List<string> paramList = new List<string>();
 
-            foreach (var keyValuePair in columns.ToList())
+            foreach (var column in columns.ToList())
             {
                 string columnType;
-                if (actualColumns.TryGetValue(keyValuePair, out columnType))
+                if (actualColumns.TryGetValue(column, out columnType))
                 {
                     if (columnType == "varchar" || columnType == "nvarchar")
                     {
                         string maxCharLength;
-                        if (actualColumnsMaxCharLength.TryGetValue(keyValuePair, out maxCharLength))
+                        if (actualColumnsMaxCharLength.TryGetValue(column, out maxCharLength))
                         {
                             if (maxCharLength == "-1")
                                 maxCharLength = "max";
@@ -54,7 +54,7 @@ namespace SqlBulkTools
                     }
                 }
 
-                paramList.Add(keyValuePair + " " + columnType);
+                paramList.Add("[" + column + "]" + " " + columnType);
             }
 
             string paramListConcatenated = string.Join(", ", paramList);
@@ -69,14 +69,14 @@ namespace SqlBulkTools
         {
             StringBuilder command = new StringBuilder();
 
-            command.Append("ON " + targetAlias + "." + updateOn[0] + " = " + sourceAlias + "." + updateOn[0] + " ");
+            command.Append("ON " + "[" + targetAlias + "]" + "." + "[" + updateOn[0] + "]" + " = " + "[" + sourceAlias + "]" + "." + "[" + updateOn[0] + "]" + " ");
 
             if (updateOn.Length > 1)
             {
                 // Start from index 1 to just append "AND" conditions
                 for (int i = 1; i < updateOn.Length; i++)
                 {
-                    command.Append("AND " + targetAlias + "." + updateOn[i] + " = " + sourceAlias + "." + updateOn[i] + " ");
+                    command.Append("AND " + "[" + targetAlias + "]" + "." + "[" + updateOn[i] + "]" + " = " + "[" + sourceAlias + "]" + "." + "[" + updateOn[i] + "]" + " ");
                 }
             }
 
@@ -94,7 +94,7 @@ namespace SqlBulkTools
             {
                 if (identityColumn != null && column != identityColumn || identityColumn == null)
                 {
-                    paramsSeparated.Add(targetAlias + "." + column + " = " + sourceAlias + "." + column);
+                    paramsSeparated.Add("[" + targetAlias + "]" + "." + "[" + column + "]" + " = " + "[" + sourceAlias + "]" + "." + "[" + column + "]");
                 }
             }
 
@@ -115,8 +115,8 @@ namespace SqlBulkTools
             {
                 if (identityColumn != null && column != identityColumn || identityColumn == null)
                 {
-                    insertColumns.Add(column);
-                    values.Add(sourceAlias + "." + column);
+                    insertColumns.Add("[" + column + "]");
+                    values.Add("[" + sourceAlias + "]" + "." + "[" + column + "]");
                 }
             }
 
