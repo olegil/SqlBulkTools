@@ -697,7 +697,7 @@ namespace SqlBulkTools.IntegrationTests
                 .WithTable("Books")
                 .AddAllColumns()
                 .BulkInsertOrUpdate()
-                .SetIdentityColumn(x => x.Id)
+                .SetIdentityColumn(x => x.Id, false)
                 .MatchTargetOn(x => x.ISBN);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();

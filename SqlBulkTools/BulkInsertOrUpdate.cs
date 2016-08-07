@@ -4,7 +4,9 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace SqlBulkTools
 {
@@ -22,6 +24,7 @@ namespace SqlBulkTools
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
         private string _identityColumn;
+        private bool _outputIdentity;
         private readonly Dictionary<string, string> _customColumnMappings;
         private readonly int _sqlTimeout;
         private readonly int _bulkCopyTimeout;
@@ -34,6 +37,7 @@ namespace SqlBulkTools
         private bool _deleteWhenNotMatchedFlag;
         private readonly HashSet<string> _disableIndexList;
         private readonly SqlBulkCopyOptions _sqlBulkCopyOptions;
+        private readonly Dictionary<int, T> _outputIdentityDic; 
 
         /// <summary>
         /// 
@@ -70,8 +74,10 @@ namespace SqlBulkTools
             _bulkCopyEnableStreaming = bulkCopyEnableStreaming;
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;
+            _outputIdentity = false;
             _deleteWhenNotMatchedFlag = false;
             _helper = new BulkOperationsHelpers();
+            _outputIdentityDic = new Dictionary<int, T>();
             _disableIndexList = disableIndexList;
             _matchTargetOn = new List<string>();
             _ext = ext;
@@ -126,6 +132,34 @@ namespace SqlBulkTools
         }
 
         /// <summary>
+        /// Sets the identity column for the table. Required if an Identity column exists in table and one of the two 
+        /// following conditions is met: (1) MatchTargetOn list contains an identity column (2) AddAllColumns is used in setup. 
+        /// </summary>
+        /// <param name="columnName"></param>
+        /// <param name="outputIdentity"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public BulkInsertOrUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName, bool outputIdentity)
+        {
+            _outputIdentity = outputIdentity;
+
+            var propertyName = _helper.GetPropertyName(columnName);
+
+            if (propertyName == null)
+                throw new InvalidOperationException("SetIdentityColumn column name can't be null");
+
+            if (_identityColumn == null)
+                _identityColumn = propertyName;
+
+            else
+            {
+                throw new InvalidOperationException("Can't have more than one identity column");
+            }
+
+            return this;
+        }
+
+        /// <summary>
         /// If a target record can't be matched to a source record, it's deleted. Notes: (1) This is false by default. (2) Use at your own risk.
         /// </summary>
         /// <param name="flag"></param>
@@ -153,8 +187,8 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. " +
                                                     "This is usually the primary key of your table but can also be more than one column depending on your business rules.");
             }
-
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);
+            
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn, _outputIdentity, _outputIdentityDic);            
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _matchTargetOn);
@@ -174,7 +208,7 @@ namespace SqlBulkTools
                         command.CommandTimeout = _sqlTimeout;
                         
                         //Creating temp table on database
-                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
+                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols, _outputIdentity);
                         command.ExecuteNonQuery();
 
                         _helper.InsertToTmpTable(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
@@ -186,16 +220,28 @@ namespace SqlBulkTools
                             command.ExecuteNonQuery();
                         }
 
-                        string comm = "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
-                                      "USING #TmpTable AS Source " +
-                                      _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
-                                          _sourceAlias, _targetAlias) +
-                                      "WHEN MATCHED THEN " +
-                                      _helper.BuildUpdateSet(_columns, _sourceAlias, _targetAlias, _identityColumn) +
-                                      "WHEN NOT MATCHED BY TARGET THEN " +
-                                      _helper.BuildInsertSet(_columns, _sourceAlias, _identityColumn) +
-                                      (_deleteWhenNotMatchedFlag ? " WHEN NOT MATCHED BY SOURCE THEN DELETE; " : "; ") +
-                                      "DROP TABLE #TmpTable;";
+                        //if (_outputIdentity)
+                        //{
+                        //    command.CommandText = _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput",
+                        //        OperationType.Insert);
+                        //    command.ExecuteNonQuery();
+                        //}
+
+                        string comm =
+                            _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.Insert) +
+                            "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) +
+                            " WITH (HOLDLOCK) AS Target " +
+                            "USING #TmpTable AS Source " +
+                            _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
+                                _sourceAlias, _targetAlias) +
+                            "WHEN MATCHED THEN " +
+                            _helper.BuildUpdateSet(_columns, _sourceAlias, _targetAlias, _identityColumn) +
+                            "WHEN NOT MATCHED BY TARGET THEN " +
+                            _helper.BuildInsertSet(_columns, _sourceAlias, _identityColumn) +
+                            (_deleteWhenNotMatchedFlag ? " WHEN NOT MATCHED BY SOURCE THEN DELETE " : " ") +
+                            _helper.GetOutputIdentityCmd(_identityColumn, _outputIdentity, "#TmpOutput",
+                                OperationType.Insert) +
+                            "DROP TABLE #TmpTable;";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
 
@@ -203,6 +249,37 @@ namespace SqlBulkTools
                         {
                             command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Rebuild, _tableName, _disableIndexList);
                             command.ExecuteNonQuery();
+                        }
+
+                        if (_outputIdentity)
+                        {
+                            command.CommandText = "SELECT InternalId, Id FROM #TmpOutput;";
+
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                var list = _list.ToList();
+
+                                while (reader.Read())
+                                {
+
+                                    var test = reader[0];
+                                    var test2 = reader[1];
+
+                                    T item;
+
+                                    if (_outputIdentityDic.TryGetValue((int)reader[0], out item))
+                                    {
+                                        Type type = item.GetType();
+
+                                        PropertyInfo prop = type.GetProperty(_identityColumn);
+
+                                        prop.SetValue(item, reader[1], null);
+                                    }
+
+
+                                }
+                            }
+
                         }
 
                         transaction.Commit();
@@ -256,7 +333,7 @@ namespace SqlBulkTools
                                                     "This is usually the primary key of your table but can also be more than one column depending on your business rules.");
             }
 
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn, _outputIdentity, _outputIdentityDic);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _matchTargetOn);
