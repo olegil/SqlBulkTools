@@ -56,7 +56,7 @@ namespace SqlBulkTools.IntegrationTests
             Assert.AreEqual(rows * RepeatTimes, _db.Books.Count());
         }
 
-        [TestCase(1000)]
+        [TestCase(100000)]
         public void SqlBulkTools_BulkInsert_WithAllColumns(int rows)
         {
             BulkDelete(_db.Books.ToList());
@@ -657,6 +657,35 @@ namespace SqlBulkTools.IntegrationTests
 
             Assert.AreEqual(expected.Id, test.Id);
 
+        }
+
+        [Test]
+        public void SqlBulkTools_BulkInsertWithSelectedColumns_TestIdentityOutput()
+        {
+
+            _db.Books.RemoveRange(_db.Books.ToList());
+
+            List<Book> books = _randomizer.GetRandomCollection(30);
+
+            BulkOperations bulk = new BulkOperations();
+            bulk.Setup<Book>(x => x.ForCollection(books))
+                .WithTable("Books")
+                .WithBulkCopyBatchSize(5000)
+                .AddColumn(x => x.Title)
+                .AddColumn(x => x.Price)
+                .AddColumn(x => x.Description)
+                .AddColumn(x => x.ISBN)
+                .AddColumn(x => x.PublishDate)
+                .TmpDisableAllNonClusteredIndexes()
+                .BulkInsert()
+                .SetIdentityColumn(x => x.Id, ColumnDirection.InputOutput);
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            var test = _db.Books.ToList().ElementAt(15); // Random book within the 30 elements
+            var expected = books.Single(x => x.ISBN == test.ISBN);
+
+            Assert.AreEqual(expected.Id, test.Id);
         }
 
 
