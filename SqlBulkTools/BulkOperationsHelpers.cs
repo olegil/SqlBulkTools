@@ -33,13 +33,13 @@ namespace SqlBulkTools
             StringBuilder command = new StringBuilder();
 
 
-            command.Append("CREATE TABLE #TmpTable(");
+            command.Append("CREATE TABLE " + Constants.TempTableName + "(");
 
             List<string> paramList = new List<string>();
 
             foreach (var column in columns.ToList())
             {
-                if (column == "InternalId")
+                if (column == Constants.InternalId)
                     continue;
                 string columnType;
                 if (actualColumns.TryGetValue(column, out columnType))
@@ -102,7 +102,7 @@ namespace SqlBulkTools
             {
                 if (identityColumn != null && column != identityColumn || identityColumn == null)
                 {
-                    if (column != "InternalId") 
+                    if (column != Constants.InternalId) 
                         paramsSeparated.Add("[" + targetAlias + "]" + "." + "[" + column + "]" + " = " + "[" + sourceAlias + "]" + "." + "[" + column + "]");
                 }
             }
@@ -124,7 +124,7 @@ namespace SqlBulkTools
             {
                 if (identityColumn != null && column != identityColumn || identityColumn == null)
                 {
-                    if (column != "InternalId")
+                    if (column != Constants.InternalId)
                     {
                         insertColumns.Add("[" + column + "]");
                         values.Add("[" + sourceAlias + "]" + "." + "[" + column + "]");
@@ -175,7 +175,7 @@ namespace SqlBulkTools
 
             if (outputIdentity.HasValue && outputIdentity.Value)
             {
-                columns.Add("InternalId");
+                columns.Add(Constants.InternalId);
             }
 
             //Get all the properties
@@ -203,9 +203,12 @@ namespace SqlBulkTools
 
                 foreach (var column in columns.ToList())
                 {
-                    if (column == "InternalId")
+                    if (column == Constants.InternalId)
                     {
                         values.Add(counter);
+                        if (outputIdentityDic == null)
+                            throw new NullReferenceException(nameof(outputIdentityDic));
+
                         outputIdentityDic.Add(counter, item);
                     }
                     else
@@ -229,7 +232,7 @@ namespace SqlBulkTools
 
             foreach (var column in columns.ToList())
             {
-                if (column == "InternalId")
+                if (column == Constants.InternalId)
                 {
                     dataTable.Columns[count].DataType = typeof(int);
                 }
@@ -482,7 +485,7 @@ namespace SqlBulkTools
         {
             using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, sqlBulkCopyOptions, transaction))
             {
-                bulkcopy.DestinationTableName = "#TmpTable";
+                bulkcopy.DestinationTableName = Constants.TempTableName;
 
                 SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
                     bulkCopyBatchSize,
@@ -496,7 +499,7 @@ namespace SqlBulkTools
         {
             using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, sqlBulkCopyOptions, transaction))
             {
-                bulkcopy.DestinationTableName = "#TmpTable";
+                bulkcopy.DestinationTableName = Constants.TempTableName;
 
                 SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
                     bulkCopyBatchSize,
@@ -507,16 +510,7 @@ namespace SqlBulkTools
         }
     }
 
-    internal static class IndexOperation
-    {
-        public const string Rebuild = "REBUILD";
-        public const string Disable = "DISABLE";
-    }
 
-    internal static class Constants
-    {
-        public const string DefaultSchemaName = "dbo";
-    }
 
     internal enum OperationType
     {

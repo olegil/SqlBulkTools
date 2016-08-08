@@ -220,18 +220,11 @@ namespace SqlBulkTools
                             command.ExecuteNonQuery();
                         }
 
-                        //if (_outputIdentity)
-                        //{
-                        //    command.CommandText = _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput",
-                        //        OperationType.Insert);
-                        //    command.ExecuteNonQuery();
-                        //}
-
                         string comm =
                             _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.Insert) +
                             "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) +
                             " WITH (HOLDLOCK) AS Target " +
-                            "USING #TmpTable AS Source " +
+                            "USING " + Constants.TempTableName + " AS Source " +
                             _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
                                 _sourceAlias, _targetAlias) +
                             "WHEN MATCHED THEN " +
@@ -241,7 +234,7 @@ namespace SqlBulkTools
                             (_deleteWhenNotMatchedFlag ? " WHEN NOT MATCHED BY SOURCE THEN DELETE " : " ") +
                             _helper.GetOutputIdentityCmd(_identityColumn, _outputIdentity, "#TmpOutput",
                                 OperationType.Insert) +
-                            "DROP TABLE #TmpTable;";
+                            "DROP TABLE " + Constants.TempTableName + ";";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
 
@@ -366,7 +359,7 @@ namespace SqlBulkTools
 
                         // Updating destination table, and dropping temp table                       
                         string comm = "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
-                                      "USING #TmpTable AS Source " +
+                                      "USING " + Constants.TempTableName + " AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
                                           _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN " +
@@ -374,7 +367,7 @@ namespace SqlBulkTools
                                       "WHEN NOT MATCHED BY TARGET THEN " +
                                       _helper.BuildInsertSet(_columns, _sourceAlias, _identityColumn) +
                                       (_deleteWhenNotMatchedFlag ? " WHEN NOT MATCHED BY SOURCE THEN DELETE; " : "; ") +
-                                      "DROP TABLE #TmpTable;";
+                                      "DROP TABLE " + Constants.TempTableName + ";";
                         command.CommandText = comm;
                         await command.ExecuteNonQueryAsync();
 

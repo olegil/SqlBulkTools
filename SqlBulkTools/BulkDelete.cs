@@ -144,11 +144,11 @@ namespace SqlBulkTools
                         }
 
                         string comm = "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
-                                      "USING #TmpTable AS Source " +
+                                      "USING " + Constants.TempTableName + " AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), 
                                       _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN DELETE; " +
-                                      "DROP TABLE #TmpTable;";
+                                      "DROP TABLE " + Constants.TempTableName + ";";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
 
@@ -234,11 +234,11 @@ namespace SqlBulkTools
 
                         // Updating destination table, and dropping temp table
                         string comm = "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
-                                      "USING #TmpTable AS Source " +
+                                      "USING " + Constants.TempTableName + " AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
                                       _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN DELETE; " +
-                                      "DROP TABLE #TmpTable;";
+                                      "DROP TABLE " + Constants.TempTableName + ";";
                         command.CommandText = comm;
                         await command.ExecuteNonQueryAsync();
 

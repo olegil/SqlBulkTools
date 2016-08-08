@@ -53,6 +53,7 @@
     <Compile Include="BulkOperationsHelpers.cs" />
     <Compile Include="BulkUpdate.cs" />
     <Compile Include="ColumnSelect.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="IBulkOperations.cs" />
     <Compile Include="ITransaction.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
