@@ -37,7 +37,7 @@ namespace SqlBulkTools
         private bool _deleteWhenNotMatchedFlag;
         private readonly HashSet<string> _disableIndexList;
         private readonly SqlBulkCopyOptions _sqlBulkCopyOptions;
-        private readonly Dictionary<int, T> _outputIdentityDic; 
+        private readonly Dictionary<int, T> _outputIdentityDic;
 
         /// <summary>
         /// 
@@ -97,7 +97,7 @@ namespace SqlBulkTools
         {
             var propertyName = _helper.GetPropertyName(columnName);
 
-            if (propertyName == null) 
+            if (propertyName == null)
                 throw new InvalidOperationException("MatchTargetOn column name can't be null.");
 
             _matchTargetOn.Add(propertyName);
@@ -114,20 +114,6 @@ namespace SqlBulkTools
         /// <exception cref="InvalidOperationException"></exception>
         public BulkInsertOrUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName)
         {
-
-            var propertyName = _helper.GetPropertyName(columnName);
-
-            if (propertyName == null)
-                throw new InvalidOperationException("SetIdentityColumn column name can't be null");
-
-            if (_identityColumn == null)
-                _identityColumn = propertyName;
-
-            else
-            {
-                throw new InvalidOperationException("Can't have more than one identity column");
-            }
-
             SetIdentity(columnName);
             return this;
         }
@@ -192,8 +178,8 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. " +
                                                     "This is usually the primary key of your table but can also be more than one column depending on your business rules.");
             }
-            
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn, _outputIdentity, _outputIdentityDic);            
+
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn, _outputIdentity, _outputIdentityDic);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _matchTargetOn);
@@ -202,7 +188,7 @@ namespace SqlBulkTools
             {
                 conn.Open();
                 var dtCols = _helper.GetDatabaseSchema(conn, _schema, _tableName);
-               
+
                 using (SqlTransaction transaction = conn.BeginTransaction())
                 {
                     try
@@ -211,7 +197,7 @@ namespace SqlBulkTools
                         command.Connection = conn;
                         command.Transaction = transaction;
                         command.CommandTimeout = _sqlTimeout;
-                        
+
                         //Creating temp table on database
                         command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols, _outputIdentity);
                         command.ExecuteNonQuery();
@@ -238,7 +224,7 @@ namespace SqlBulkTools
                             _helper.BuildInsertSet(_columns, _sourceAlias, _identityColumn) +
                             (_deleteWhenNotMatchedFlag ? " WHEN NOT MATCHED BY SOURCE THEN DELETE " : " ") +
                             _helper.GetOutputIdentityCmd(_identityColumn, _outputIdentity, "#TmpOutput",
-                                OperationType.InsertOrUpdate) + ";" + 
+                                OperationType.InsertOrUpdate) + ";" +
                             "DROP TABLE " + Constants.TempTableName + ";";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
@@ -251,7 +237,6 @@ namespace SqlBulkTools
 
                         if (_outputIdentity == ColumnDirection.InputOutput)
                         {
-                            command.CommandText = "SELECT InternalId, Id FROM #TmpOutput;";
                             command.CommandText = "SELECT " + Constants.InternalId + ", " + _identityColumn + " FROM #TmpOutput;";
 
                             using (SqlDataReader reader = command.ExecuteReader())
