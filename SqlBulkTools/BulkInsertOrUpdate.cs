@@ -74,7 +74,6 @@ namespace SqlBulkTools
             _bulkCopyEnableStreaming = bulkCopyEnableStreaming;
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;
-            _outputIdentity = false;
             _outputIdentity = ColumnDirection.Input;
             _deleteWhenNotMatchedFlag = false;
             _helper = new BulkOperationsHelpers();
@@ -141,7 +140,6 @@ namespace SqlBulkTools
         /// <param name="outputIdentity"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public BulkInsertOrUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName, bool outputIdentity)
         public BulkInsertOrUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName, ColumnDirection outputIdentity)
         {
             _outputIdentity = outputIdentity;
@@ -164,8 +162,6 @@ namespace SqlBulkTools
             {
                 throw new InvalidOperationException("Can't have more than one identity column");
             }
-
-            return this;
         }
 
         /// <summary>
@@ -253,7 +249,6 @@ namespace SqlBulkTools
                             command.ExecuteNonQuery();
                         }
 
-                        if (_outputIdentity)
                         if (_outputIdentity == ColumnDirection.InputOutput)
                         {
                             command.CommandText = "SELECT InternalId, Id FROM #TmpOutput;";
