@@ -268,15 +268,11 @@ namespace SqlBulkTools
 
                                         prop.SetValue(item, reader[1], null);
                                     }
-
-
                                 }
                             }
-
                         }
 
                         transaction.Commit();
-
                     }
 
                     catch (SqlException e)
