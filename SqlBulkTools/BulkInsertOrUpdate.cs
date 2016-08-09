@@ -24,7 +24,7 @@ namespace SqlBulkTools
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
         private string _identityColumn;
-        private bool _outputIdentity;
+        private ColumnDirection _outputIdentity;
         private readonly Dictionary<string, string> _customColumnMappings;
         private readonly int _sqlTimeout;
         private readonly int _bulkCopyTimeout;
@@ -75,6 +75,7 @@ namespace SqlBulkTools
             _bulkCopyNotifyAfter = bulkCopyNotifyAfter;
             _bulkCopyBatchSize = bulkCopyBatchSize;
             _outputIdentity = false;
+            _outputIdentity = ColumnDirection.Input;
             _deleteWhenNotMatchedFlag = false;
             _helper = new BulkOperationsHelpers();
             _outputIdentityDic = new Dictionary<int, T>();
@@ -128,6 +129,7 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("Can't have more than one identity column");
             }
 
+            SetIdentity(columnName);
             return this;
         }
 
@@ -140,9 +142,16 @@ namespace SqlBulkTools
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         public BulkInsertOrUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName, bool outputIdentity)
+        public BulkInsertOrUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName, ColumnDirection outputIdentity)
         {
             _outputIdentity = outputIdentity;
+            SetIdentity(columnName);
 
+            return this;
+        }
+
+        private void SetIdentity(Expression<Func<T, object>> columnName)
+        {
             var propertyName = _helper.GetPropertyName(columnName);
 
             if (propertyName == null)
@@ -221,7 +230,7 @@ namespace SqlBulkTools
                         }
 
                         string comm =
-                            _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.Insert) +
+                            _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.InsertOrUpdate) +
                             "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) +
                             " WITH (HOLDLOCK) AS Target " +
                             "USING " + Constants.TempTableName + " AS Source " +
@@ -233,7 +242,7 @@ namespace SqlBulkTools
                             _helper.BuildInsertSet(_columns, _sourceAlias, _identityColumn) +
                             (_deleteWhenNotMatchedFlag ? " WHEN NOT MATCHED BY SOURCE THEN DELETE " : " ") +
                             _helper.GetOutputIdentityCmd(_identityColumn, _outputIdentity, "#TmpOutput",
-                                OperationType.Insert) +
+                                OperationType.InsertOrUpdate) + ";" + 
                             "DROP TABLE " + Constants.TempTableName + ";";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
@@ -245,34 +254,35 @@ namespace SqlBulkTools
                         }
 
                         if (_outputIdentity)
+                        if (_outputIdentity == ColumnDirection.InputOutput)
                         {
                             command.CommandText = "SELECT InternalId, Id FROM #TmpOutput;";
+                            command.CommandText = "SELECT " + Constants.InternalId + ", " + _identityColumn + " FROM #TmpOutput;";
 
                             using (SqlDataReader reader = command.ExecuteReader())
                             {
-                                var list = _list.ToList();
-
                                 while (reader.Read())
                                 {
-
-                                    var test = reader[0];
-                                    var test2 = reader[1];
-
                                     T item;
 
                                     if (_outputIdentityDic.TryGetValue((int)reader[0], out item))
                                     {
-                                        Type type = item.GetType();
+                                        //Type type = item.GetType();
 
-                                        PropertyInfo prop = type.GetProperty(_identityColumn);
+                                        //PropertyInfo prop = type.GetProperty(_identityColumn);
 
-                                        prop.SetValue(item, reader[1], null);
+                                        //prop.SetValue(item, reader[1], null);
+
+                                        item.GetType().GetProperty(_identityColumn).SetValue(item, reader[1], null);
                                     }
+
                                 }
                             }
+
                         }
 
                         transaction.Commit();
+
                     }
 
                     catch (SqlException e)

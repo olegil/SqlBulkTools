@@ -4,6 +4,8 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace SqlBulkTools
@@ -31,6 +33,8 @@ namespace SqlBulkTools
         private readonly HashSet<string> _disableIndexList;
         private readonly bool _disableAllIndexes;
         private readonly SqlBulkCopyOptions _sqlBulkCopyOptions;
+        private string _identityColumn;
+        private ColumnDirection _outputIdentity;
 
         /// <summary>
         /// 
@@ -71,7 +75,54 @@ namespace SqlBulkTools
             _bulkCopyBatchSize = bulkCopyBatchSize;
             _ext = ext;
             _sqlBulkCopyOptions = sqlBulkCopyOptions;
+            _outputIdentity = ColumnDirection.Input;
+            _identityColumn = null;
             _ext.SetBulkExt(this);
+        }
+
+        /// <summary>
+        /// Sets the identity column for the table. Required if an Identity column exists in table and one of the two 
+        /// following conditions is met: (1) MatchTargetOn list contains an identity column (2) AddAllColumns is used in setup. 
+        /// </summary>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public BulkInsert<T> SetIdentityColumn(Expression<Func<T, object>> columnName)
+        {
+            SetIdentity(columnName);
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the identity column for the table. Required if an Identity column exists in table and one of the two 
+        /// following conditions is met: (1) MatchTargetOn list contains an identity column (2) AddAllColumns is used in setup. 
+        /// </summary>
+        /// <param name="columnName"></param>
+        /// <param name="outputIdentity"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public BulkInsert<T> SetIdentityColumn(Expression<Func<T, object>> columnName, ColumnDirection outputIdentity)
+        {
+            _outputIdentity = outputIdentity;
+            SetIdentity(columnName);
+
+            return this;
+        }
+
+        private void SetIdentity(Expression<Func<T, object>> columnName)
+        {
+            var propertyName = _helper.GetPropertyName(columnName);
+
+            if (propertyName == null)
+                throw new InvalidOperationException("SetIdentityColumn column name can't be null");
+
+            if (_identityColumn == null)
+                _identityColumn = propertyName;
+
+            else
+            {
+                throw new InvalidOperationException("Can't have more than one identity column");
+            }
         }
 
 
@@ -97,6 +148,9 @@ namespace SqlBulkTools
             {
 
                 conn.Open();
+                DataTable dtCols = null;
+                if (_outputIdentity == ColumnDirection.InputOutput)
+                    dtCols = _helper.GetDatabaseSchema(conn, _schema, _tableName);
 
                 using (SqlTransaction transaction = conn.BeginTransaction())
                 {
@@ -122,7 +176,41 @@ namespace SqlBulkTools
                                 command.ExecuteNonQuery();
                             }
 
-                            bulkcopy.WriteToServer(dt);
+                            // If InputOutput identity is selected, must use staging table.
+                            if (_outputIdentity == ColumnDirection.InputOutput && dtCols != null)
+                            {
+                                command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols, _outputIdentity);
+                                command.ExecuteNonQuery();
+
+                                _helper.InsertToTmpTable(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
+                                    _bulkCopyNotifyAfter, _bulkCopyTimeout, _sqlBulkCopyOptions);
+
+                                string comm =
+                                _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.Insert) +
+                                "INSERT INTO " + _tableName + " " + "OUTPUT INSERTED.Id INTO #TmpOutput(Id)" + " " + _helper.BuildSelectSet(_columns, _sourceAlias, _identityColumn) + " FROM " + Constants.TempTableName + " AS Source; " +
+                                "DROP TABLE " + Constants.TempTableName + ";";
+                                command.CommandText = comm;
+                                command.ExecuteNonQuery();
+
+                                command.CommandText = "SELECT " + _identityColumn + " FROM #TmpOutput;";
+
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    var items = _list.ToList();
+                                    int counter = 0;
+
+                                    while (reader.Read())
+                                    {
+                                        items[counter].GetType().GetProperty(_identityColumn).SetValue(items[counter], reader[0], null);
+                                        counter++;
+                                    }
+                                }
+
+
+                            }
+                            
+                            else
+                                bulkcopy.WriteToServer(dt);
 
                             if (_disableAllIndexes || (_disableIndexList != null && _disableIndexList.Any()))
                             {
