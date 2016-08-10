@@ -209,7 +209,7 @@ namespace SqlBulkTools
             return memberExpr.Member.Name;
         }
 
-        internal DataTable ToDataTable<T>(IEnumerable<T> items, HashSet<string> columns, Dictionary<string, string> columnMappings, List<string> matchOnColumns = null, ColumnDirection? outputIdentity = null, Dictionary<int, T> outputIdentityDic = null)
+        internal DataTable ToDataTable<T>(IEnumerable<T> list, HashSet<string> columns, Dictionary<string, string> columnMappings, List<string> matchOnColumns = null, ColumnDirection? outputIdentity = null, Dictionary<int, T> outputIdentityDic = null)
         {
             DataTable dataTable = new DataTable(typeof(T).Name);
 
@@ -241,7 +241,7 @@ namespace SqlBulkTools
 
             int counter = 0;
 
-            foreach (T item in items)
+            foreach (T item in list)
             {
 
                 var values = new List<object>();
