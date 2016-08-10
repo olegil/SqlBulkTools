@@ -139,7 +139,7 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("Invalid setup. If \'TmpDisableAllNonClusteredIndexes\' is invoked, you can not use the \'AddTmpDisableNonClusteredIndex\' method.");
             }
 
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings);
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _updateOnList, _outputIdentity);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _updateOnList);
@@ -187,7 +187,7 @@ namespace SqlBulkTools
 
                                 string comm =
                                 _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.Insert) +
-                                "INSERT INTO " + _tableName + " " + "OUTPUT INSERTED.Id INTO #TmpOutput(Id)" + " " + _helper.BuildSelectSet(_columns, _sourceAlias, _identityColumn) + " FROM " + Constants.TempTableName + " AS Source; " +
+                                _helper.BuildInsertIntoSet(_columns, _identityColumn, _tableName) + "OUTPUT INSERTED.Id INTO #TmpOutput(Id)" + " " + _helper.BuildSelectSet(_columns, _sourceAlias, _identityColumn) + " FROM " + Constants.TempTableName + " AS Source; " +
                                 "DROP TABLE " + Constants.TempTableName + ";";
                                 command.CommandText = comm;
                                 command.ExecuteNonQuery();

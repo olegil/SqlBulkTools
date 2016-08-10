@@ -56,7 +56,7 @@ namespace SqlBulkTools.IntegrationTests
             Assert.AreEqual(rows * RepeatTimes, _db.Books.Count());
         }
 
-        [TestCase(100000)]
+        [TestCase(1000)]
         public void SqlBulkTools_BulkInsert_WithAllColumns(int rows)
         {
             BulkDelete(_db.Books.ToList());
@@ -664,6 +664,7 @@ namespace SqlBulkTools.IntegrationTests
         {
 
             _db.Books.RemoveRange(_db.Books.ToList());
+            _db.SaveChanges();
 
             List<Book> books = _randomizer.GetRandomCollection(30);
 

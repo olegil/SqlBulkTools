@@ -54,7 +54,7 @@ namespace SqlBulkTools.UnitTests
         public void BulkOperationsHelpers_BuildUpdateSet_BuildsCorrectSequenceForMultipleColumns()
         {
             // Arrange
-            var updateOrInsertColumns = GetTestParameters();
+            var updateOrInsertColumns = GetTestColumns();
             var expected =
                 "UPDATE SET [Target].[id] = [Source].[id], [Target].[Name] = [Source].[Name], [Target].[Town] = [Source].[Town], [Target].[Email] = [Source].[Email], [Target].[IsCool] = [Source].[IsCool] ";
             var sut = new BulkOperationsHelpers();
@@ -90,7 +90,7 @@ namespace SqlBulkTools.UnitTests
         public void BulkOperationsHelpers_BuildInsertSet_BuildsCorrectSequenceForMultipleColumns()
         {
             // Arrange
-            var updateOrInsertColumns = GetTestParameters();
+            var updateOrInsertColumns = GetTestColumns();
             var expected =
                 "INSERT ([Name], [Town], [Email], [IsCool]) values ([Source].[Name], [Source].[Town], [Source].[Email], [Source].[IsCool])";
             var sut = new BulkOperationsHelpers();
@@ -100,6 +100,42 @@ namespace SqlBulkTools.UnitTests
 
             // Assert
             Assert.AreEqual(expected, result);
+
+        }
+
+        [Test]
+        public void BulkOperationsHelpers_BuildInsertIntoSet_BuildsCorrectSequenceForSingleColumn()
+        {
+            // Arrange
+            var columns = new HashSet<string>();
+            columns.Add("Id");
+            var tableName = "TableName";
+
+            var expected = "INSERT INTO TableName ([Id]) ";
+            var sut = new BulkOperationsHelpers();
+
+            // Act
+            var result = sut.BuildInsertIntoSet(columns, null, tableName);
+
+            // Assert
+            Assert.AreEqual(result, expected);
+        }
+
+        [Test]
+        public void BulkOperationsHelpers_BuildInsertIntoSet_BuildsCorrectSequenceForMultipleColumns()
+        {
+            var columns = GetTestColumns();
+            var tableName = "TableName";
+            var expected =
+                "INSERT INTO TableName ([Name], [Town], [Email], [IsCool]) ";
+
+            var sut = new BulkOperationsHelpers();
+
+            // Act
+            var result = sut.BuildInsertIntoSet(columns, "id", tableName);
+
+            // Assert
+            Assert.AreEqual(result, expected);
 
         }
 
@@ -204,7 +240,7 @@ namespace SqlBulkTools.UnitTests
 
 
 
-        private HashSet<string> GetTestParameters()
+        private HashSet<string> GetTestColumns()
         {
             HashSet<string> parameters = new HashSet<string>();
 

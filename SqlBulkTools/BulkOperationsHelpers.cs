@@ -140,6 +140,27 @@ namespace SqlBulkTools
             return command.ToString();
         }
 
+        internal string BuildInsertIntoSet(HashSet<string> columns, string identityColumn, string tableName)
+        {
+            StringBuilder command = new StringBuilder();
+            List<string> insertColumns = new List<string>();
+
+            command.Append("INSERT INTO ");
+            command.Append(tableName);
+            command.Append(" (");
+
+            foreach (var column in columns)
+            {
+                if (column != Constants.InternalId && column != identityColumn)
+                    insertColumns.Add("[" + column + "]");
+            }
+
+            command.Append(string.Join(", ", insertColumns));
+            command.Append(") ");
+
+            return command.ToString();
+        }
+
         internal string BuildSelectSet(HashSet<string> columns, string sourceAlias, string identityColumn)
         {
             StringBuilder command = new StringBuilder();
@@ -231,10 +252,7 @@ namespace SqlBulkTools
                     if (column == Constants.InternalId)
                     {
                         values.Add(counter);
-                        if (outputIdentityDic == null)
-                            throw new NullReferenceException(nameof(outputIdentityDic));
-
-                        outputIdentityDic.Add(counter, item);
+                        outputIdentityDic?.Add(counter, item);
                     }
                     else
                         for (int i = 0; i < props.Length; i++)
