@@ -17,7 +17,7 @@ namespace SqlBulkTools
 {
     internal class BulkOperationsHelpers
     {
-        internal string BuildCreateTempTable(HashSet<string> columns, DataTable schema, ColumnDirection? outputIdentity = null)
+        internal string BuildCreateTempTable(HashSet<string> columns, DataTable schema, ColumnDirection outputIdentity)
         {
             Dictionary<string, string> actualColumns = new Dictionary<string, string>();
             Dictionary<string, string> actualColumnsMaxCharLength = new Dictionary<string, string>();
@@ -64,7 +64,7 @@ namespace SqlBulkTools
 
             command.Append(paramListConcatenated);
 
-            if (outputIdentity.HasValue && outputIdentity.Value == ColumnDirection.InputOutput)
+            if (outputIdentity == ColumnDirection.InputOutput)
             {
                 command.Append(", [" + Constants.InternalId + "] int");
             }
@@ -122,14 +122,13 @@ namespace SqlBulkTools
 
             foreach (var column in columns.ToList())
             {
-                if (identityColumn != null && column != identityColumn || identityColumn == null)
+
+                if (column != Constants.InternalId && column != identityColumn)
                 {
-                    if (column != Constants.InternalId)
-                    {
-                        insertColumns.Add("[" + column + "]");
-                        values.Add("[" + sourceAlias + "]" + "." + "[" + column + "]");
-                    }
+                    insertColumns.Add("[" + column + "]");
+                    values.Add("[" + sourceAlias + "]" + "." + "[" + column + "]");
                 }
+
             }
 
             command.Append(string.Join(", ", insertColumns));
@@ -464,11 +463,13 @@ namespace SqlBulkTools
                 return ("; ");
             }
             if (operation == OperationType.Insert)
-                sb.Append("OUTPUT INSERTED." + identityColumn + " INTO " + tmpTableName + "(" + identityColumn + ") ");
+                sb.Append("OUTPUT INSERTED." + identityColumn + " INTO " + tmpTableName + "(" + identityColumn + "); ");
 
-            else if (operation == OperationType.InsertOrUpdate)
-                sb.Append("OUTPUT Source." + Constants.InternalId + ", INSERTED." + identityColumn + " INTO " + tmpTableName + "(" + Constants.InternalId + ", " + identityColumn + ") ");
+            else if (operation == OperationType.InsertOrUpdate || operation == OperationType.Update)
+                sb.Append("OUTPUT Source." + Constants.InternalId + ", INSERTED." + identityColumn + " INTO " + tmpTableName + "(" + Constants.InternalId + ", " + identityColumn + "); ");
 
+            else if (operation == OperationType.Delete)
+                sb.Append("OUTPUT Source." + Constants.InternalId + ", DELETED." + identityColumn + " INTO " + tmpTableName + "(" + Constants.InternalId + ", " + identityColumn + "); ");
 
             return sb.ToString();
         }
@@ -479,7 +480,7 @@ namespace SqlBulkTools
             if (operation == OperationType.Insert)
                 return (outputIdentity == ColumnDirection.InputOutput ? "CREATE TABLE " + tmpTablename + "(" + "Id int); " : "");
 
-            else if (operation == OperationType.InsertOrUpdate)
+            else if (operation == OperationType.InsertOrUpdate || operation == OperationType.Update || operation == OperationType.Delete)
                 return (outputIdentity == ColumnDirection.InputOutput ? "CREATE TABLE " + tmpTablename + "(" + Constants.InternalId + " int, Id int); " : "");
 
             return string.Empty;
@@ -560,10 +561,4 @@ namespace SqlBulkTools
         }
     }
 
-
-
-    internal enum OperationType
-    {
-        Insert, InsertOrUpdate
-    }
 }

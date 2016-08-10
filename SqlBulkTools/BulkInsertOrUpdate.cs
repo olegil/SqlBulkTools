@@ -247,17 +247,14 @@ namespace SqlBulkTools
 
                                     if (_outputIdentityDic.TryGetValue((int)reader[0], out item))
                                     {
-                                        //Type type = item.GetType();
-
-                                        //PropertyInfo prop = type.GetProperty(_identityColumn);
-
-                                        //prop.SetValue(item, reader[1], null);
-
                                         item.GetType().GetProperty(_identityColumn).SetValue(item, reader[1], null);
                                     }
 
                                 }
                             }
+
+                            command.CommandText = "DROP TABLE " + "#TmpOutput" + ";";
+                            command.ExecuteNonQuery();
 
                         }
 
@@ -331,7 +328,7 @@ namespace SqlBulkTools
                         command.CommandTimeout = _sqlTimeout;
 
                         //Creating temp table on database
-                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
+                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols, _outputIdentity);
                         await command.ExecuteNonQueryAsync();
 
                         await _helper.InsertToTmpTableAsync(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize,

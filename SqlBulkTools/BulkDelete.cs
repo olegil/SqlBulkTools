@@ -26,6 +26,7 @@ namespace SqlBulkTools
         private readonly Dictionary<string, string> _customColumnMappings;
         private readonly int _sqlTimeout;
         private readonly int _bulkCopyTimeout;
+        private string _identityColumn;
         private readonly HashSet<string> _disableIndexList;
         private readonly bool _bulkCopyEnableStreaming;
         private readonly int? _bulkCopyNotifyAfter;
@@ -33,6 +34,8 @@ namespace SqlBulkTools
         private readonly bool _disableAllIndexes;
         private readonly SqlBulkCopyOptions _sqlBulkCopyOptions;
         private readonly BulkOperations _ext;
+        private readonly Dictionary<int, T> _outputIdentityDic;
+        private ColumnDirection _outputIdentity;
 
         /// <summary>
         /// 
@@ -74,7 +77,10 @@ namespace SqlBulkTools
             _bulkCopyBatchSize = bulkCopyBatchSize;
             _helper = new BulkOperationsHelpers();
             _sqlBulkCopyOptions = sqlBulkCopyOptions;            
-            _ext = ext;           
+            _ext = ext;
+            _identityColumn = null;
+            _outputIdentityDic = new Dictionary<int, T>();
+            _outputIdentity = ColumnDirection.Input;
             _ext.SetBulkExt(this);
         }
 
@@ -90,6 +96,51 @@ namespace SqlBulkTools
             var propertyName = _helper.GetPropertyName(columnName);
             _matchTargetOn.Add(propertyName);
             return this;
+        }
+
+        /// <summary>
+        /// Sets the identity column for the table. Required if an Identity column exists in table and one of the two 
+        /// following conditions is met: (1) MatchTargetOn list contains an identity column (2) AddAllColumns is used in setup. 
+        /// </summary>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public BulkDelete<T> SetIdentityColumn(Expression<Func<T, object>> columnName)
+        {
+            SetIdentity(columnName);
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the identity column for the table. Required if an Identity column exists in table and one of the two 
+        /// following conditions is met: (1) MatchTargetOn list contains an identity column (2) AddAllColumns is used in setup. 
+        /// </summary>
+        /// <param name="columnName"></param>
+        /// <param name="outputIdentity"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public BulkDelete<T> SetIdentityColumn(Expression<Func<T, object>> columnName, ColumnDirection outputIdentity)
+        {
+            _outputIdentity = outputIdentity;
+            SetIdentity(columnName);
+
+            return this;
+        }
+
+        private void SetIdentity(Expression<Func<T, object>> columnName)
+        {
+            var propertyName = _helper.GetPropertyName(columnName);
+
+            if (propertyName == null)
+                throw new InvalidOperationException("SetIdentityColumn column name can't be null");
+
+            if (_identityColumn == null)
+                _identityColumn = propertyName;
+
+            else
+            {
+                throw new InvalidOperationException("Can't have more than one identity column");
+            }
         }
 
         void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
@@ -109,7 +160,7 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("MatchTargetOn list is empty when it's required for this operation. This is usually the primary key of your table but can also be more than one column depending on your business rules.");
             }
 
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn, _outputIdentity, _outputIdentityDic);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns);
@@ -129,7 +180,7 @@ namespace SqlBulkTools
                         command.CommandTimeout = _sqlTimeout;
 
                         //Creating temp table on database
-                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
+                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols, _outputIdentity);
                         command.ExecuteNonQuery();
 
                         _helper.InsertToTmpTable(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout, _sqlBulkCopyOptions);
@@ -143,11 +194,14 @@ namespace SqlBulkTools
                             command.ExecuteNonQuery();
                         }
 
-                        string comm = "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
+                        string comm = _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.Delete) + 
+                                      "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
                                       "USING " + Constants.TempTableName + " AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(), 
                                       _sourceAlias, _targetAlias) +
-                                      "WHEN MATCHED THEN DELETE; " +
+                                      "WHEN MATCHED THEN DELETE " +
+                                      _helper.GetOutputIdentityCmd(_identityColumn, _outputIdentity, "#TmpOutput",
+                                      OperationType.Delete) + 
                                       "DROP TABLE " + Constants.TempTableName + ";";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
@@ -155,6 +209,28 @@ namespace SqlBulkTools
                         if (_disableIndexList != null && _disableIndexList.Any())
                         {
                             command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Rebuild, _tableName, _disableIndexList);
+                            command.ExecuteNonQuery();
+                        }
+
+                        if (_outputIdentity == ColumnDirection.InputOutput)
+                        {
+                            command.CommandText = "SELECT " + Constants.InternalId + ", " + _identityColumn + " FROM #TmpOutput;";
+
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    T item;
+
+                                    if (_outputIdentityDic.TryGetValue((int)reader[0], out item))
+                                    {
+                                        item.GetType().GetProperty(_identityColumn).SetValue(item, reader[1], null);
+                                    }
+
+                                }
+                            }
+
+                            command.CommandText = "DROP TABLE " + "#TmpOutput" + ";";
                             command.ExecuteNonQuery();
                         }
 
@@ -221,7 +297,7 @@ namespace SqlBulkTools
                         command.CommandTimeout = _sqlTimeout;
 
                         //Creating temp table on database
-                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
+                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols, _outputIdentity);
                         await command.ExecuteNonQueryAsync();
 
                         await _helper.InsertToTmpTableAsync(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize, _bulkCopyNotifyAfter, _bulkCopyTimeout, _sqlBulkCopyOptions);                        

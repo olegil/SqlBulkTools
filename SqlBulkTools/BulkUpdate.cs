@@ -34,6 +34,8 @@ namespace SqlBulkTools
         private readonly SqlBulkCopyOptions _sqlBulkCopyOptions;
         private readonly BulkOperations _ext;
         private readonly BulkOperationsHelpers _helper;
+        private readonly Dictionary<int, T> _outputIdentityDic;
+        private ColumnDirection _outputIdentity;
 
         /// <summary>
         /// Updates existing records in bulk. 
@@ -74,8 +76,11 @@ namespace SqlBulkTools
             _bulkCopyBatchSize = bulkCopyBatchSize;
             _helper = new BulkOperationsHelpers();
             _matchTargetOn = new List<string>();
+            _identityColumn = null;
             _ext = ext;           
             _sqlBulkCopyOptions = sqlBulkCopyOptions;
+            _outputIdentityDic = new Dictionary<int, T>();
+            _outputIdentity = ColumnDirection.Input;
             _ext.SetBulkExt(this);
         }
 
@@ -107,7 +112,28 @@ namespace SqlBulkTools
         /// <exception cref="InvalidOperationException"></exception>
         public BulkUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName)
         {
+            SetIdentity(columnName);
+            return this;
+        }
 
+        /// <summary>
+        /// Sets the identity column for the table. Required if an Identity column exists in table and one of the two 
+        /// following conditions is met: (1) MatchTargetOn list contains an identity column (2) AddAllColumns is used in setup. 
+        /// </summary>
+        /// <param name="columnName"></param>
+        /// <param name="outputIdentity"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public BulkUpdate<T> SetIdentityColumn(Expression<Func<T, object>> columnName, ColumnDirection outputIdentity)
+        {
+            _outputIdentity = outputIdentity;
+            SetIdentity(columnName);
+
+            return this;
+        }
+
+        private void SetIdentity(Expression<Func<T, object>> columnName)
+        {
             var propertyName = _helper.GetPropertyName(columnName);
 
             if (propertyName == null)
@@ -120,8 +146,6 @@ namespace SqlBulkTools
             {
                 throw new InvalidOperationException("Can't have more than one identity column");
             }
-
-            return this;
         }
 
         void ITransaction.CommitTransaction(string connectionName, SqlCredential credentials, SqlConnection connection)
@@ -142,7 +166,7 @@ namespace SqlBulkTools
                                                     "the primary key of your table but can also be more than one column depending on your business rules.");
             }
 
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn);
+            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _matchTargetOn, _outputIdentity, _outputIdentityDic);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _matchTargetOn);
@@ -162,7 +186,7 @@ namespace SqlBulkTools
                         command.CommandTimeout = _sqlTimeout;
 
                         //Creating temp table on database
-                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
+                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols, _outputIdentity);
                         command.ExecuteNonQuery();
 
                         //Bulk insert into temp table
@@ -176,19 +200,44 @@ namespace SqlBulkTools
                             command.ExecuteNonQuery();
                         }
 
-                        string comm = "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
+                        string comm = _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.Update) +
+                                      "MERGE INTO " + _helper.GetFullQualifyingTableName(conn.Database, _schema, _tableName) + " WITH (HOLDLOCK) AS Target " +
                                       "USING " + Constants.TempTableName + " AS Source " +
                                       _helper.BuildJoinConditionsForUpdateOrInsert(_matchTargetOn.ToArray(),
                                           _sourceAlias, _targetAlias) +
                                       "WHEN MATCHED THEN " +
                                       _helper.BuildUpdateSet(_columns, _sourceAlias, _targetAlias, _identityColumn) +
-                                      "; DROP TABLE " + Constants.TempTableName + ";";
+                                      _helper.GetOutputIdentityCmd(_identityColumn, _outputIdentity, "#TmpOutput",
+                                OperationType.Update) + "; " +
+                                      "DROP TABLE " + Constants.TempTableName + ";";
                         command.CommandText = comm;
                         command.ExecuteNonQuery();
 
                         if (_disableIndexList != null && _disableIndexList.Any())
                         {
                             command.CommandText = _helper.GetIndexManagementCmd(IndexOperation.Rebuild, _tableName, _disableIndexList);
+                            command.ExecuteNonQuery();
+                        }
+
+                        if (_outputIdentity == ColumnDirection.InputOutput)
+                        {
+                            command.CommandText = "SELECT " + Constants.InternalId + ", " + _identityColumn + " FROM #TmpOutput;";
+
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    T item;
+
+                                    if (_outputIdentityDic.TryGetValue((int)reader[0], out item))
+                                    {
+                                        item.GetType().GetProperty(_identityColumn).SetValue(item, reader[1], null);
+                                    }
+
+                                }
+                            }
+
+                            command.CommandText = "DROP TABLE " + "#TmpOutput" + ";";
                             command.ExecuteNonQuery();
                         }
 
@@ -263,7 +312,7 @@ namespace SqlBulkTools
                         command.CommandTimeout = _sqlTimeout;
 
                         //Creating temp table on database
-                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols);
+                        command.CommandText = _helper.BuildCreateTempTable(_columns, dtCols, _outputIdentity);
                         await command.ExecuteNonQueryAsync();
 
                         //Bulk insert into temp table

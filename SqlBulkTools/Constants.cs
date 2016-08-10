@@ -13,8 +13,15 @@
         public const string Disable = "DISABLE";
     }
 
+    #pragma warning disable 1591
     public enum ColumnDirection
+    {        
+        Input, InputOutput       
+    }
+    #pragma warning restore 1591
+
+    internal enum OperationType
     {
-        Input, InputOutput
+        Insert, InsertOrUpdate, Update, Delete
     }
 }

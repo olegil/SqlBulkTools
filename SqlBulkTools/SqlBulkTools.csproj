@@ -46,14 +46,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataTableAllColumnSelect.cs" />
     <Compile Include="AllColumnSelect.cs" />
     <Compile Include="BulkDelete.cs" />
     <Compile Include="BulkInsert.cs" />
     <Compile Include="BulkInsertOrUpdate.cs" />
     <Compile Include="BulkOperationsHelpers.cs" />
     <Compile Include="BulkUpdate.cs" />
+    <Compile Include="DataTableColumnSelect.cs" />
     <Compile Include="ColumnSelect.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="DataTable.cs" />
     <Compile Include="IBulkOperations.cs" />
     <Compile Include="ITransaction.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

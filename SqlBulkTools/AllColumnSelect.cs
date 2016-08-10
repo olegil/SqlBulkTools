@@ -117,6 +117,26 @@ namespace SqlBulkTools
         }
 
         /// <summary>
+        /// Remove a column that you want to be excluded. 
+        /// </summary>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public AllColumnSelect<T> RemoveColumn(Expression<Func<T, object>> columnName)
+        {
+            var propertyName = _helper.GetPropertyName(columnName);
+            if (_columns.Contains(propertyName))
+                _columns.Remove(propertyName);
+
+            else           
+                throw new InvalidOperationException("Could not remove the column with name " 
+                    + columnName +  
+                    ". This could be because it's not a value or string type and therefore not included.");
+
+            return this;
+        }
+
+        /// <summary>
         /// A bulk insert will attempt to insert all records. If you have any unique constraints on columns, these must be respected. 
         /// Notes: (1) Only the columns configured (via AddColumn) will be evaluated. (3) Use AddAllColumns to add all columns in table. 
         /// </summary>

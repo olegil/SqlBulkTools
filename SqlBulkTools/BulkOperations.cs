@@ -117,5 +117,15 @@ namespace SqlBulkTools
             CollectionSelect<T> tableSelect = list(new Setup<T>(SourceAlias, TargetAlias, this));
             return tableSelect;
         }
+
+        /// <summary>
+        /// Each transaction requires a valid setup. Examples available at: https://github.com/gtaylor44/SqlBulkTools 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public Setup<T> Setup<T>()
+        {
+            return new Setup<T>(SourceAlias, TargetAlias, this);
+        } 
     }
 }

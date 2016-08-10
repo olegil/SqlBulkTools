@@ -185,9 +185,12 @@ namespace SqlBulkTools
                                 _helper.InsertToTmpTable(conn, transaction, dt, _bulkCopyEnableStreaming, _bulkCopyBatchSize,
                                     _bulkCopyNotifyAfter, _bulkCopyTimeout, _sqlBulkCopyOptions);
 
+                                string fullTableName = _helper.GetFullQualifyingTableName(conn.Database, _schema,
+                                    _tableName);
+
                                 string comm =
                                 _helper.GetOutputCreateTableCmd(_outputIdentity, "#TmpOutput", OperationType.Insert) +
-                                _helper.BuildInsertIntoSet(_columns, _identityColumn, _tableName) + "OUTPUT INSERTED.Id INTO #TmpOutput(Id)" + " " + _helper.BuildSelectSet(_columns, _sourceAlias, _identityColumn) + " FROM " + Constants.TempTableName + " AS Source; " +
+                                _helper.BuildInsertIntoSet(_columns, _identityColumn, fullTableName) + "OUTPUT INSERTED.Id INTO #TmpOutput(Id)" + " " + _helper.BuildSelectSet(_columns, _sourceAlias, _identityColumn) + " FROM " + Constants.TempTableName + " AS Source; " +
                                 "DROP TABLE " + Constants.TempTableName + ";";
                                 command.CommandText = comm;
                                 command.ExecuteNonQuery();
@@ -206,6 +209,8 @@ namespace SqlBulkTools
                                     }
                                 }
 
+                                command.CommandText = "DROP TABLE " + "#TmpOutput" + ";";
+                                command.ExecuteNonQuery();
 
                             }
                             
