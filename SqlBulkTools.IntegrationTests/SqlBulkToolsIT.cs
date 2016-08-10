@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Ploeh.AutoFixture;
@@ -765,8 +767,37 @@ namespace SqlBulkTools.IntegrationTests
         }
 
         [Test]
+        public void SqlBulkTools_BulkInsertOrUpdate_DecimalValueCorrectlySet()
+        {
+
+            _db.Books.RemoveRange(_db.Books.ToList());
+            _db.SaveChanges();
+
+            decimal? price = (decimal?) 1.33;
+
+            BulkOperations bulk = new BulkOperations();
+            List<Book> books = new List<Book>() {new Book() {Description = "Test", ISBN = "12345678910", Price = price } };
+
+            bulk.Setup<Book>()
+                .ForCollection(books)
+                .WithTable("Books")
+                .AddAllColumns()
+                .BulkInsertOrUpdate()
+                .MatchTargetOn(x => x.ISBN)
+                .SetIdentityColumn(x => x.Id);
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            Assert.AreEqual(_db.Books.First().Price, price);
+
+        }
+
+        [Test]
         public void SqlBulkTools_BulkDeleteWithSelectedColumns_TestIdentityOutput()
         {
+
+            // Reset Identity CMD: DBCC CHECKIDENT ('[TestTable]', RESEED, 0);
+
             List<Book> books = _randomizer.GetRandomCollection(30);
             BulkDelete(_db.Books.ToList());
             BulkInsert(books);
@@ -834,7 +865,6 @@ namespace SqlBulkTools.IntegrationTests
             Assert.AreEqual("Price", test.Columns[1].ColumnName);
             Assert.AreEqual("PublishDate", test.Columns[2].ColumnName);
             Assert.AreEqual(typeof(DateTime), test.Columns[2].DataType);
-
         }
 
         private void AppendToLogFile(string text)
