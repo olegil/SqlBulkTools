@@ -37,5 +37,14 @@ namespace SqlBulkTools
         {
             return new Table<T>(_list, tableName, _sourceAlias, _targetAlias, _ext);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public DataTable<T> BuildDataTable()
+        {
+            return new DataTable<T>(_list);
+        } 
     }
 }

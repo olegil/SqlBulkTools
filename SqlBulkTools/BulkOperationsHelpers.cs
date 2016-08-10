@@ -209,7 +209,7 @@ namespace SqlBulkTools
             return memberExpr.Member.Name;
         }
 
-        internal DataTable ToDataTable<T>(IEnumerable<T> list, HashSet<string> columns, Dictionary<string, string> columnMappings, List<string> matchOnColumns = null, ColumnDirection? outputIdentity = null, Dictionary<int, T> outputIdentityDic = null)
+        internal DataTable CreateDataTable<T>(HashSet<string> columns, Dictionary<string, string> columnMappings, List<string> matchOnColumns = null, ColumnDirection? outputIdentity = null)
         {
             DataTable dataTable = new DataTable(typeof(T).Name);
 
@@ -239,6 +239,14 @@ namespace SqlBulkTools
 
             AssignTypes(props, columns, dataTable);
 
+            return dataTable;
+        }
+
+        public DataTable ConvertListToDataTable<T>(DataTable dataTable, IEnumerable<T> list, HashSet<string> columns, Dictionary<int, T> outputIdentityDic = null)
+        {
+
+            PropertyInfo[] props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
             int counter = 0;
 
             foreach (T item in list)
@@ -266,6 +274,7 @@ namespace SqlBulkTools
 
             }
             return dataTable;
+
         }
 
         private void AssignTypes(PropertyInfo[] props, HashSet<string> columns, DataTable dataTable)

@@ -64,7 +64,7 @@
     <Compile Include="BulkOperations.cs" />
     <Compile Include="IdentityException.cs" />
     <Compile Include="Table.cs" />
-    <Compile Include="TableSelect.cs" />
+    <Compile Include="CollectionSelect.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

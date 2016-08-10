@@ -64,7 +64,7 @@ namespace SqlBulkTools
         /// <exception cref="NotImplementedException"></exception>
         public DataTable ToDataTable()
         {
-            return _helper.ToDataTable(_list, _columns, CustomColumnMappings);
+            return _helper.CreateDataTable<T>( _columns, CustomColumnMappings);
         }
 
     }

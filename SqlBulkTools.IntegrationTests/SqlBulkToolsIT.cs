@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.IO;
@@ -766,12 +767,8 @@ namespace SqlBulkTools.IntegrationTests
         [Test]
         public void SqlBulkTools_BulkDeleteWithSelectedColumns_TestIdentityOutput()
         {
-
-            _db.Books.RemoveRange(_db.Books.ToList());
-            _db.SaveChanges();
-
             List<Book> books = _randomizer.GetRandomCollection(30);
-
+            BulkDelete(_db.Books.ToList());
             BulkInsert(books);
 
             BulkOperations bulk = new BulkOperations();
@@ -819,6 +816,26 @@ namespace SqlBulkTools.IntegrationTests
 
         }
 
+        [Test]
+        public void SqlBulkTools_ToDataTable_WhenThreeColumnsAdded()
+        {
+            BulkOperations bulk = new BulkOperations();
+            List<Book> books = _randomizer.GetRandomCollection(30);
+
+            var test = bulk.Setup<Book>()
+                .ForCollection(books)
+                .BuildDataTable()
+                .AddColumn(x => x.ISBN)
+                .AddColumn(x => x.Price)
+                .AddColumn(x => x.PublishDate)
+                .ToDataTable();
+
+            Assert.AreEqual("ISBN", test.Columns[0].ColumnName);
+            Assert.AreEqual("Price", test.Columns[1].ColumnName);
+            Assert.AreEqual("PublishDate", test.Columns[2].ColumnName);
+            Assert.AreEqual(typeof(DateTime), test.Columns[2].DataType);
+
+        }
 
         private void AppendToLogFile(string text)
         {

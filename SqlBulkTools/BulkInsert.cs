@@ -139,7 +139,8 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("Invalid setup. If \'TmpDisableAllNonClusteredIndexes\' is invoked, you can not use the \'AddTmpDisableNonClusteredIndex\' method.");
             }
 
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings, _updateOnList, _outputIdentity);
+            DataTable dt = _helper.CreateDataTable<T>(_columns, _customColumnMappings, _updateOnList, _outputIdentity);
+            dt = _helper.ConvertListToDataTable(dt, _list, _columns);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _updateOnList);
@@ -262,7 +263,8 @@ namespace SqlBulkTools
                 throw new InvalidOperationException("Invalid setup. If \'TmpDisableAllNonClusteredIndexes\' is invoked, you can not use the \'AddTmpDisableNonClusteredIndex\' method.");
             }
 
-            DataTable dt = _helper.ToDataTable(_list, _columns, _customColumnMappings);
+            DataTable dt = _helper.CreateDataTable<T>(_columns, _customColumnMappings, _updateOnList, _outputIdentity);
+            dt = _helper.ConvertListToDataTable(dt, _list, _columns);
 
             // Must be after ToDataTable is called. 
             _helper.DoColumnMappings(_customColumnMappings, _columns, _updateOnList);
