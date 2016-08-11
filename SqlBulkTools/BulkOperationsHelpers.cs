@@ -17,21 +17,45 @@ namespace SqlBulkTools
 {
     internal class BulkOperationsHelpers
     {
+        internal struct PrecisionType
+        {
+            public string NumericPrecision { get; set; }
+            public string NumericScale { get; set; }
+        }
+
         internal string BuildCreateTempTable(HashSet<string> columns, DataTable schema, bool? outputIdentity = null)
         {
             Dictionary<string, string> actualColumns = new Dictionary<string, string>();
             Dictionary<string, string> actualColumnsMaxCharLength = new Dictionary<string, string>();
+            Dictionary<string, PrecisionType> actualColumnsPrecision = new Dictionary<string, PrecisionType>();
 
 
             foreach (DataRow row in schema.Rows)
             {
+                string columnType = row["DATA_TYPE"].ToString();
+                string columnName = row["COLUMN_NAME"].ToString();
+
                 actualColumns.Add(row["COLUMN_NAME"].ToString(), row["DATA_TYPE"].ToString());
-                actualColumnsMaxCharLength.Add(row["COLUMN_NAME"].ToString(),
-                    row["CHARACTER_MAXIMUM_LENGTH"].ToString());
+
+                if (columnType == "varchar" || columnType == "nvarchar")
+                {
+                    actualColumnsMaxCharLength.Add(row["COLUMN_NAME"].ToString(),
+                        row["CHARACTER_MAXIMUM_LENGTH"].ToString());
+                }
+
+                if (columnType == "numeric" || columnType == "decimal")
+                {
+                    PrecisionType p = new PrecisionType
+                    {
+                        NumericPrecision = row["NUMERIC_PRECISION"].ToString(),
+                        NumericScale = row["NUMERIC_SCALE"].ToString()
+                    };
+                    actualColumnsPrecision.Add(columnName, p);
+                }
+
             }
 
             StringBuilder command = new StringBuilder();
-
 
             command.Append("CREATE TABLE #TmpTable(");
 
@@ -44,17 +68,8 @@ namespace SqlBulkTools
                 string columnType;
                 if (actualColumns.TryGetValue(column, out columnType))
                 {
-                    if (columnType == "varchar" || columnType == "nvarchar")
-                    {
-                        string maxCharLength;
-                        if (actualColumnsMaxCharLength.TryGetValue(column, out maxCharLength))
-                        {
-                            if (maxCharLength == "-1")
-                                maxCharLength = "max";
-
-                            columnType = columnType + "(" + maxCharLength + ")";
-                        }
-                    }
+                    columnType = GetVariableCharType(column, columnType, actualColumnsMaxCharLength);
+                    columnType = GetDecimalPrecisionAndScaleType(column, columnType, actualColumnsPrecision);
                 }
 
                 paramList.Add("[" + column + "]" + " " + columnType);
@@ -71,6 +86,38 @@ namespace SqlBulkTools
             command.Append(");");
 
             return command.ToString();
+        }
+
+        private string GetVariableCharType(string column, string columnType, Dictionary<string, string> actualColumnsMaxCharLength)
+        {
+            if (columnType == "varchar" || columnType == "nvarchar")
+            {
+                string maxCharLength;
+                if (actualColumnsMaxCharLength.TryGetValue(column, out maxCharLength))
+                {
+                    if (maxCharLength == "-1")
+                        maxCharLength = "max";
+
+                    columnType = columnType + "(" + maxCharLength + ")";
+                }
+            }
+
+            return columnType;
+        }
+
+        private string GetDecimalPrecisionAndScaleType(string column, string columnType, Dictionary<string, PrecisionType> actualColumnsPrecision)
+        {
+            if (columnType == "decimal" || columnType == "numeric")
+            {
+                PrecisionType p;
+
+                if (actualColumnsPrecision.TryGetValue(column, out p))
+                {
+                    columnType = columnType + "(" + p.NumericPrecision + ", " + p.NumericScale + ")";
+                }
+            }
+
+            return columnType;
         }
 
         internal string BuildJoinConditionsForUpdateOrInsert(string[] updateOn, string sourceAlias, string targetAlias)
