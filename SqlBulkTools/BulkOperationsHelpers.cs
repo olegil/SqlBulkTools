@@ -37,7 +37,10 @@ namespace SqlBulkTools
 
                 actualColumns.Add(row["COLUMN_NAME"].ToString(), row["DATA_TYPE"].ToString());
 
-                if (columnType == "varchar" || columnType == "nvarchar")
+                if (columnType == "varchar" || columnType == "nvarchar" || 
+                    columnType == "char" || columnType == "binary" || 
+                    columnType == "varbinary")
+
                 {
                     actualColumnsMaxCharLength.Add(row["COLUMN_NAME"].ToString(),
                         row["CHARACTER_MAXIMUM_LENGTH"].ToString());

@@ -632,6 +632,29 @@ namespace SqlBulkTools.IntegrationTests
 
         }
 
+        [Test]
+        public void SqlBulkTools_BulkInsertOrUpdae_FloatValueCorrectlySet()
+        {
+            _db.Books.RemoveRange(_db.Books.ToList());
+            _db.SaveChanges();
+
+            float? expectedFloat = (float?)1.33;
+
+            BulkOperations bulk = new BulkOperations();
+            List<Book> books = new List<Book>() { new Book() { Description = "Test", ISBN = "12345678910", Price = 30, TestFloat = expectedFloat} };
+
+            bulk.Setup<Book>(x => x.ForCollection(books))
+                .WithTable("Books")
+                .AddAllColumns()
+                .BulkInsertOrUpdate()
+                .MatchTargetOn(x => x.ISBN)
+                .SetIdentityColumn(x => x.Id);
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            Assert.AreEqual(_db.Books.First().TestFloat, expectedFloat);
+        }
+
 
         private void AppendToLogFile(string text)
         {

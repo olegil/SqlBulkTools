@@ -26,6 +26,8 @@ namespace SqlBulkTools.IntegrationTests.Model
         [Required]
         [Index]
         public decimal? Price { get; set; }
+
+        public float? TestFloat { get; set; }
     }
 
 }
