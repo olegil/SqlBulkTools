@@ -607,6 +607,31 @@ namespace SqlBulkTools.IntegrationTests
 
         }
 
+        [Test]
+        public void SqlBulkTools_BulkInsertOrUpdate_DecimalValueCorrectlySet()
+        {
+
+            _db.Books.RemoveRange(_db.Books.ToList());
+            _db.SaveChanges();
+
+            decimal? expectedPrice = (decimal?)1.33;
+
+            BulkOperations bulk = new BulkOperations();
+            List<Book> books = new List<Book>() { new Book() { Description = "Test", ISBN = "12345678910", Price = expectedPrice } };
+
+            bulk.Setup<Book>(x => x.ForCollection(books))                
+                .WithTable("Books")
+                .AddAllColumns()
+                .BulkInsertOrUpdate()
+                .MatchTargetOn(x => x.ISBN)
+                .SetIdentityColumn(x => x.Id);
+
+            bulk.CommitTransaction("SqlBulkToolsTest");
+
+            Assert.AreEqual(_db.Books.First().Price, expectedPrice);
+
+        }
+
 
         private void AppendToLogFile(string text)
         {
