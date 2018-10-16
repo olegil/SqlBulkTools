@@ -31,14 +31,19 @@ namespace SqlBulkTools
         public void CommitTransaction(string connectionName, SqlCredential credentials = null)
         {
             if (connectionName == null)
+            {
                 throw new ArgumentNullException(nameof(connectionName) + " not given");
+            }
 
             if (ConfigurationManager.ConnectionStrings[connectionName] == null)
+            {
                 throw new InvalidOperationException("Connection name \'" + connectionName + "\' not found. A valid connection name is required for this operation.");
+            }
 
             if (_transaction == null)
+            {
                 throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
-            
+            }
 
             _transaction.CommitTransaction(connectionName, credentials);
         }
@@ -56,13 +61,19 @@ namespace SqlBulkTools
         public async Task CommitTransactionAsync(string connectionName, SqlCredential credentials = null)
         {
             if (connectionName == null)
+            {
                 throw new ArgumentNullException(nameof(connectionName) + " not given");
+            }
 
             if (ConfigurationManager.ConnectionStrings[connectionName] == null)
+            {
                 throw new InvalidOperationException("Connection name \'" + connectionName + "\' not found. A valid connection name is required for this operation.");
+            }
 
             if (_transaction == null)
+            {
                 throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
+            }
 
             await _transaction.CommitTransactionAsync(connectionName, credentials);
         }
@@ -77,10 +88,14 @@ namespace SqlBulkTools
         public void CommitTransaction(SqlConnection connection)
         {
             if (connection == null)
+            {
                 throw new ArgumentNullException(nameof(connection));
+            }
 
             if (_transaction == null)
+            {
                 throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
+            }
 
             _transaction.CommitTransaction(connection : connection);
 
@@ -98,10 +113,14 @@ namespace SqlBulkTools
         public async Task CommitTransactionAsync(SqlConnection connection)
         {
             if (connection == null)
+            {
                 throw new ArgumentNullException(nameof(connection));
+            }
 
             if (_transaction == null)
+            {
                 throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
+            }
 
             await _transaction.CommitTransactionAsync(connection : connection);
         }

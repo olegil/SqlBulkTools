@@ -17,6 +17,8 @@ namespace SqlBulkTools
 {
     internal class BulkOperationsHelpers
     {
+        private const string V = "#TmpTable";
+
         internal struct PrecisionType
         {
             public string NumericPrecision { get; set; }
@@ -64,10 +66,13 @@ namespace SqlBulkTools
 
             List<string> paramList = new List<string>();
 
-            foreach (var column in columns.ToList())
+            foreach (string column in columns.ToList())
             {
                 if (column == "InternalId")
+                {
                     continue;
+                }
+
                 string columnType;
                 if (actualColumns.TryGetValue(column, out columnType))
                 {
@@ -75,7 +80,7 @@ namespace SqlBulkTools
                     columnType = GetDecimalPrecisionAndScaleType(column, columnType, actualColumnsPrecision);
                 }
 
-                paramList.Add("[" + column + "]" + " " + columnType);
+                paramList.Add($"[{column}] {columnType}");
             }
 
             string paramListConcatenated = string.Join(", ", paramList);
@@ -99,9 +104,11 @@ namespace SqlBulkTools
                 if (actualColumnsMaxCharLength.TryGetValue(column, out maxCharLength))
                 {
                     if (maxCharLength == "-1")
+                    {
                         maxCharLength = "max";
+                    }
 
-                    columnType = columnType + "(" + maxCharLength + ")";
+                    columnType = $"{columnType}({maxCharLength})";
                 }
             }
 
@@ -116,7 +123,7 @@ namespace SqlBulkTools
 
                 if (actualColumnsPrecision.TryGetValue(column, out p))
                 {
-                    columnType = columnType + "(" + p.NumericPrecision + ", " + p.NumericScale + ")";
+                    columnType = $"{columnType}({p.NumericPrecision}, {p.NumericScale})";
                 }
             }
 
@@ -127,14 +134,14 @@ namespace SqlBulkTools
         {
             StringBuilder command = new StringBuilder();
 
-            command.Append("ON " + "[" + targetAlias + "]" + "." + "[" + updateOn[0] + "]" + " = " + "[" + sourceAlias + "]" + "." + "[" + updateOn[0] + "]" + " ");
+            command.Append($"ON [{targetAlias}].[{updateOn[0]}] = [{sourceAlias}].[{updateOn[0]}] ");
 
             if (updateOn.Length > 1)
             {
                 // Start from index 1 to just append "AND" conditions
                 for (int i = 1; i < updateOn.Length; i++)
                 {
-                    command.Append("AND " + "[" + targetAlias + "]" + "." + "[" + updateOn[i] + "]" + " = " + "[" + sourceAlias + "]" + "." + "[" + updateOn[i] + "]" + " ");
+                    command.Append($"AND [{targetAlias}].[{updateOn[i]}] = [{sourceAlias}].[{updateOn[i]}] ");
                 }
             }
 
@@ -148,12 +155,14 @@ namespace SqlBulkTools
 
             command.Append("UPDATE SET ");
 
-            foreach (var column in columns.ToList())
+            foreach (string column in columns.ToList())
             {
                 if (identityColumn != null && column != identityColumn || identityColumn == null)
                 {
-                    if (column != "InternalId") 
-                        paramsSeparated.Add("[" + targetAlias + "]" + "." + "[" + column + "]" + " = " + "[" + sourceAlias + "]" + "." + "[" + column + "]");
+                    if (column != "InternalId")
+                    {
+                        paramsSeparated.Add($"[{targetAlias}].[{column}] = [{sourceAlias}].[{column}]");
+                    }
                 }
             }
 
@@ -170,14 +179,14 @@ namespace SqlBulkTools
 
             command.Append("INSERT (");
 
-            foreach (var column in columns.ToList())
+            foreach (string column in columns.ToList())
             {
                 if (identityColumn != null && column != identityColumn || identityColumn == null)
                 {
                     if (column != "InternalId")
                     {
-                        insertColumns.Add("[" + column + "]");
-                        values.Add("[" + sourceAlias + "]" + "." + "[" + column + "]");
+                        insertColumns.Add($"[{column}]");
+                        values.Add($"[{sourceAlias}].[{column}]");
                     }
                 }
             }
@@ -194,7 +203,9 @@ namespace SqlBulkTools
         {
             LambdaExpression lambda = method as LambdaExpression;
             if (lambda == null)
+            {
                 throw new ArgumentNullException("method");
+            }
 
             MemberExpression memberExpr = null;
 
@@ -209,7 +220,9 @@ namespace SqlBulkTools
             }
 
             if (memberExpr == null)
+            {
                 throw new ArgumentException("method");
+            }
 
             return memberExpr.Member.Name;
         }
@@ -231,7 +244,7 @@ namespace SqlBulkTools
             //Get all the properties
             PropertyInfo[] props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-            foreach (var column in columns.ToList())
+            foreach (string column in columns.ToList())
             {
                 if (columnMappings.ContainsKey(column))
                 {
@@ -239,7 +252,9 @@ namespace SqlBulkTools
                 }
 
                 else
+                {
                     dataTable.Columns.Add(column);
+                }
             }
 
             AssignTypes(props, columns, dataTable, outputIdentity);
@@ -248,10 +263,10 @@ namespace SqlBulkTools
 
             foreach (T item in items)
             {
-                
-                var values = new List<object>();
 
-                foreach (var column in columns.ToList())
+                List<object> values = new List<object>();
+
+                foreach (string column in columns.ToList())
                 {
                     if (column == "InternalId")
                     {
@@ -259,12 +274,15 @@ namespace SqlBulkTools
                         outputIdentityDic.Add(counter, item);
                     }
                     else
+                    {
                         for (int i = 0; i < props.Length; i++)
                         {
                             if (props[i].Name == column && item != null)
+                            {
                                 values.Add(props[i].GetValue(item, null));
+                            }
                         }
-
+                    }
                 }
                 counter++;
                 dataTable.Rows.Add(values.ToArray());
@@ -277,13 +295,14 @@ namespace SqlBulkTools
         {
             int count = 0;
 
-            foreach (var column in columns.ToList())
+            foreach (string column in columns.ToList())
             {
                 if (column == "InternalId")
                 {
                     dataTable.Columns[count].DataType = typeof(int);
                 }
                 else
+                {
                     for (int i = 0; i < props.Length; i++)
                     {
                         if (props[i].Name == column)
@@ -292,6 +311,8 @@ namespace SqlBulkTools
                                                                 props[i].PropertyType;
                         }
                     }
+                }
+
                 count++;
             }
         }
@@ -339,7 +360,7 @@ namespace SqlBulkTools
         /// <returns></returns>
         internal HashSet<string> CheckForAdditionalColumns(HashSet<string> columns, List<string> matchOnColumns)
         {
-            foreach (var col in matchOnColumns)
+            foreach (string col in matchOnColumns)
             {
                 if (!columns.Contains(col))
                 {
@@ -355,7 +376,7 @@ namespace SqlBulkTools
         {
             if (columnMappings.Count > 0)
             {
-                foreach (var column in columnMappings)
+                foreach (KeyValuePair<string, string> column in columnMappings)
                 {
                     if (columns.Contains(column.Key))
                     {
@@ -378,7 +399,7 @@ namespace SqlBulkTools
         {
             if (columnMappings.Count > 0)
             {
-                foreach (var column in columnMappings)
+                foreach (KeyValuePair<string, string> column in columnMappings)
                 {
                     if (columns.Contains(column.Key))
                     {
@@ -424,7 +445,7 @@ namespace SqlBulkTools
         internal void MapColumns(SqlBulkCopy bulkCopy, HashSet<string> columns, Dictionary<string, string> customColumnMappings)
         {
 
-            foreach (var column in columns.ToList())
+            foreach (string column in columns.ToList())
             {
                 string mapping;
 
@@ -434,7 +455,9 @@ namespace SqlBulkTools
                 }
 
                 else
+                {
                     bulkCopy.ColumnMappings.Add(column, column);
+                }
             }
 
         }
@@ -448,7 +471,7 @@ namespace SqlBulkTools
 
             for (int i = 0; i < props.Length; i++)
             {
-                var type2 = props[i].GetType();
+                Type type2 = props[i].GetType();
                 if (props[i].PropertyType.IsValueType || props[i].PropertyType == typeof(string))
                 {
                     columns.Add(props[i].Name);
@@ -468,7 +491,7 @@ namespace SqlBulkTools
                 return ("; ");
             }
 
-            sb.Append("OUTPUT Source.InternalId, INSERTED." + identityColumn + " INTO " + tmpTableName + "(InternalId, " + identityColumn + "); ");
+            sb.Append($"OUTPUT Source.InternalId, INSERTED.{identityColumn} INTO {tmpTableName}(InternalId, {identityColumn}); ");
 
 
             return sb.ToString();
@@ -477,7 +500,9 @@ namespace SqlBulkTools
         internal string GetOutputCreateTableCmd(bool outputIdentity, string tmpTablename, OperationType operation)
         {
             if (operation == OperationType.Insert)
-                return (outputIdentity ? "CREATE TABLE " + tmpTablename + "(InternalId int, Id int); " : "");
+            {
+                return (outputIdentity ? $"CREATE TABLE {tmpTablename}(InternalId int, Id int); " : "");
+            }
 
             return string.Empty;
         }
@@ -489,7 +514,7 @@ namespace SqlBulkTools
 
             if (disableIndexList != null && disableIndexList.Any())
             {
-                foreach (var index in disableIndexList)
+                foreach (string index in disableIndexList)
                 {
                     sb.Append(" AND sys.indexes.name = \'");
                     sb.Append(index);
@@ -521,10 +546,18 @@ namespace SqlBulkTools
             restrictions[0] = conn.Database;
             restrictions[1] = schema;
             restrictions[2] = tableName;
-            var dtCols = conn.GetSchema("Columns", restrictions);
+            DataTable dtCols = conn.GetSchema("Columns", restrictions);
 
-            if (dtCols.Rows.Count == 0 && schema != null) throw new InvalidOperationException("Table name '" + tableName + "\' with schema name \'" + schema + "\' not found. Check your setup and try again.");
-            if (dtCols.Rows.Count == 0) throw new InvalidOperationException("Table name \'" + tableName + "\' not found. Check your setup and try again.");
+            if (dtCols.Rows.Count == 0 && schema != null)
+            {
+                throw new InvalidOperationException($"Table name '{tableName}\' with schema name \'{schema}\' not found. Check your setup and try again.");
+            }
+
+            if (dtCols.Rows.Count == 0)
+            {
+                throw new InvalidOperationException($"Table name \'{tableName}\' not found. Check your setup and try again.");
+            }
+
             return dtCols;
         }
 
@@ -532,7 +565,7 @@ namespace SqlBulkTools
         {
             using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, sqlBulkCopyOptions, transaction))
             {
-                bulkcopy.DestinationTableName = "#TmpTable";
+                bulkcopy.DestinationTableName = V;
 
                 SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
                     bulkCopyBatchSize,
@@ -546,7 +579,7 @@ namespace SqlBulkTools
         {
             using (SqlBulkCopy bulkcopy = new SqlBulkCopy(conn, sqlBulkCopyOptions, transaction))
             {
-                bulkcopy.DestinationTableName = "#TmpTable";
+                bulkcopy.DestinationTableName = V;
 
                 SetSqlBulkCopySettings(bulkcopy, bulkCopyEnableStreaming,
                     bulkCopyBatchSize,

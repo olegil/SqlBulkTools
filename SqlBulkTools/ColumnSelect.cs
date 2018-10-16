@@ -111,7 +111,9 @@ namespace SqlBulkTools
         public ColumnSelect<T> AddTmpDisableNonClusteredIndex(string indexName)
         {
             if (indexName == null)
+            {
                 throw new ArgumentNullException(nameof(indexName));
+            }
 
             _disableIndexList.Add(indexName);
 

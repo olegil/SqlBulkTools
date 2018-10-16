@@ -97,8 +97,10 @@ namespace SqlBulkTools
         {
             var propertyName = _helper.GetPropertyName(columnName);
 
-            if (propertyName == null) 
+            if (propertyName == null)
+            {
                 throw new InvalidOperationException("MatchTargetOn column name can't be null.");
+            }
 
             _matchTargetOn.Add(propertyName);
 
@@ -118,11 +120,14 @@ namespace SqlBulkTools
             var propertyName = _helper.GetPropertyName(columnName);
 
             if (propertyName == null)
+            {
                 throw new InvalidOperationException("SetIdentityColumn column name can't be null");
+            }
 
             if (_identityColumn == null)
+            {
                 _identityColumn = propertyName;
-
+            }
             else
             {
                 throw new InvalidOperationException("Can't have more than one identity column");
@@ -146,11 +151,14 @@ namespace SqlBulkTools
             var propertyName = _helper.GetPropertyName(columnName);
 
             if (propertyName == null)
+            {
                 throw new InvalidOperationException("SetIdentityColumn column name can't be null");
+            }
 
             if (_identityColumn == null)
+            {
                 _identityColumn = propertyName;
-
+            }
             else
             {
                 throw new InvalidOperationException("Can't have more than one identity column");
