@@ -2,12 +2,12 @@
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     /// <summary>
     /// 
     /// </summary>
-    public interface IBulkOperations
+    public interface IBulkOperations : IFluentSyntax
     {
         /// <summary>
         /// 

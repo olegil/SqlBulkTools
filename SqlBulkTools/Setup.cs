@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     /// <summary>
     /// 

@@ -61,9 +61,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SqlBulkTools\SqlBulkTools.csproj">
+    <ProjectReference Include="..\SqlBulkTools\AgentFire.Sql.BulkTools.csproj">
       <Project>{5cd2ee50-a2e1-4740-aee4-87e9928f0230}</Project>
-      <Name>SqlBulkTools</Name>
+      <Name>AgentFire.Sql.BulkTools</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

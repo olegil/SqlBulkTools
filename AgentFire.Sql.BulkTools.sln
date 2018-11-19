@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2046
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlBulkTools", "SqlBulkTools\SqlBulkTools.csproj", "{5CD2EE50-A2E1-4740-AEE4-87E9928F0230}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentFire.Sql.BulkTools", "SqlBulkTools\AgentFire.Sql.BulkTools.csproj", "{5CD2EE50-A2E1-4740-AEE4-87E9928F0230}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlBulkTools.UnitTests", "SqlBulkTools.UnitTests\SqlBulkTools.UnitTests.csproj", "{B91DE38C-7ED2-4445-AC02-6A4DEC07F3BD}"
 EndProject
@@ -36,5 +36,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {22C5D868-51A6-4494-9296-0F4E4F6D6760}
 	EndGlobalSection
 EndGlobal

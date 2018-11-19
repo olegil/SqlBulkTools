@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("SqlBulkTools.UnitTests")]
 [assembly: InternalsVisibleTo("SqlBulkTools.IntegrationTests")]
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     internal class BulkOperationsHelpers
     {
@@ -39,8 +39,8 @@ namespace SqlBulkTools
 
                 actualColumns.Add(row["COLUMN_NAME"].ToString(), row["DATA_TYPE"].ToString());
 
-                if (columnType == "varchar" || columnType == "nvarchar" || 
-                    columnType == "char" || columnType == "binary" || 
+                if (columnType == "varchar" || columnType == "nvarchar" ||
+                    columnType == "char" || columnType == "binary" ||
                     columnType == "varbinary")
 
                 {
@@ -73,8 +73,7 @@ namespace SqlBulkTools
                     continue;
                 }
 
-                string columnType;
-                if (actualColumns.TryGetValue(column, out columnType))
+                if (actualColumns.TryGetValue(column, out string columnType))
                 {
                     columnType = GetVariableCharType(column, columnType, actualColumnsMaxCharLength);
                     columnType = GetDecimalPrecisionAndScaleType(column, columnType, actualColumnsPrecision);
@@ -100,8 +99,7 @@ namespace SqlBulkTools
         {
             if (columnType == "varchar" || columnType == "nvarchar")
             {
-                string maxCharLength;
-                if (actualColumnsMaxCharLength.TryGetValue(column, out maxCharLength))
+                if (actualColumnsMaxCharLength.TryGetValue(column, out string maxCharLength))
                 {
                     if (maxCharLength == "-1")
                     {
@@ -119,9 +117,8 @@ namespace SqlBulkTools
         {
             if (columnType == "decimal" || columnType == "numeric")
             {
-                PrecisionType p;
 
-                if (actualColumnsPrecision.TryGetValue(column, out p))
+                if (actualColumnsPrecision.TryGetValue(column, out PrecisionType p))
                 {
                     columnType = $"{columnType}({p.NumericPrecision}, {p.NumericScale})";
                 }
@@ -202,17 +199,17 @@ namespace SqlBulkTools
         internal string GetPropertyName(Expression method)
         {
             LambdaExpression lambda = method as LambdaExpression;
+
             if (lambda == null)
             {
-                throw new ArgumentNullException("method");
+                throw new ArgumentNullException(nameof(method));
             }
 
             MemberExpression memberExpr = null;
 
             if (lambda.Body.NodeType == ExpressionType.Convert)
             {
-                memberExpr =
-                    ((UnaryExpression)lambda.Body).Operand as MemberExpression;
+                memberExpr = ((UnaryExpression)lambda.Body).Operand as MemberExpression;
             }
             else if (lambda.Body.NodeType == ExpressionType.MemberAccess)
             {
@@ -221,7 +218,7 @@ namespace SqlBulkTools
 
             if (memberExpr == null)
             {
-                throw new ArgumentException("method");
+                throw new ArgumentException(nameof(method));
             }
 
             return memberExpr.Member.Name;
@@ -447,9 +444,8 @@ namespace SqlBulkTools
 
             foreach (string column in columns.ToList())
             {
-                string mapping;
 
-                if (customColumnMappings.TryGetValue(column, out mapping))
+                if (customColumnMappings.TryGetValue(column, out string mapping))
                 {
                     bulkCopy.ColumnMappings.Add(mapping, mapping);
                 }

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq.Expressions;
 
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     /// <summary>
     /// Configurable options for table. 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class Table<T>
+    public class Table<T> : IFluentSyntax
     {
         private HashSet<string> Columns { get; set; }
         private List<string> UpdateOnList { get; set; }
@@ -67,7 +67,7 @@ namespace SqlBulkTools
         {
             var propertyName = _helper.GetPropertyName(columnName);
             Columns.Add(propertyName);
-            return new ColumnSelect<T>(_list, _tableName, Columns, _schema, _sourceAlias, _targetAlias, 
+            return new ColumnSelect<T>(_list, _tableName, Columns, _schema, _sourceAlias, _targetAlias,
                 _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
         }
 
@@ -156,7 +156,7 @@ namespace SqlBulkTools
         /// <param name="options"></param>
         /// <returns></returns>
         public Table<T> WithSqlBulkCopyOptions(SqlBulkCopyOptions options)
-        {           
+        {
             _sqlBulkCopyOptions = options;
             return this;
         }
