@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Data.Linq;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 
@@ -32,12 +33,12 @@ namespace AgentFire.Sql.BulkTools
         {
             if (connectionName == null)
             {
-                throw new ArgumentNullException(nameof(connectionName) + " not given");
+                throw new ArgumentNullException($"{nameof(connectionName)} not given");
             }
 
             if (ConfigurationManager.ConnectionStrings[connectionName] == null)
             {
-                throw new InvalidOperationException("Connection name \'" + connectionName + "\' not found. A valid connection name is required for this operation.");
+                throw new InvalidOperationException($"Connection name \'{connectionName}\' not found. A valid connection name is required for this operation.");
             }
 
             if (_transaction == null)
@@ -62,12 +63,12 @@ namespace AgentFire.Sql.BulkTools
         {
             if (connectionName == null)
             {
-                throw new ArgumentNullException(nameof(connectionName) + " not given");
+                throw new ArgumentNullException($"{nameof(connectionName)} not given");
             }
 
             if (ConfigurationManager.ConnectionStrings[connectionName] == null)
             {
-                throw new InvalidOperationException("Connection name \'" + connectionName + "\' not found. A valid connection name is required for this operation.");
+                throw new InvalidOperationException($"Connection name \'{connectionName}\' not found. A valid connection name is required for this operation.");
             }
 
             if (_transaction == null)
@@ -75,7 +76,7 @@ namespace AgentFire.Sql.BulkTools
                 throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
             }
 
-            await _transaction.CommitTransactionAsync(connectionName, credentials);
+            await _transaction.CommitTransactionAsync(connectionName, credentials).ConfigureAwait(false);
         }
 
 
@@ -122,19 +123,17 @@ namespace AgentFire.Sql.BulkTools
                 throw new InvalidOperationException("No setup found. Use the Setup method to build a new setup then try again.");
             }
 
-            await _transaction.CommitTransactionAsync(connection : connection);
+            await _transaction.CommitTransactionAsync(connection : connection).ConfigureAwait(false);
         }
+
 
         /// <summary>
         /// Each transaction requires a valid setup. Examples available at: https://github.com/gtaylor44/SqlBulkTools 
         /// </summary>
         /// <typeparam name="T">The type of collection to be used.</typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
         public CollectionSelect<T> Setup<T>(Func<Setup<T>, CollectionSelect<T>> list)
         {
-            CollectionSelect<T> tableSelect = list(new Setup<T>(SourceAlias, TargetAlias, this));
-            return tableSelect;
+            return list(new Setup<T>(SourceAlias, TargetAlias, this));
         }
     }
 }

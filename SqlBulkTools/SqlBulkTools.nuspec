@@ -2,14 +2,14 @@
 <package>
   <metadata>
     <id>AgentFire.Sql.BulkTools</id>
-    <version>1.0.4.3</version>
+    <version>1.0.5</version>
     <title>AgentFire.Sql.BulkTools</title>
     <authors>AgentFire</authors>
     <owners>AgentFire</owners>
     <projectUrl>https://github.com/AgentFire/SqlBulkTools</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>(Forked from olegil/SqlBulkTools) High-performance C# Bulk operations for SQL Server (starting from 2008) and Azure SQL Database. Supports Bulk Insert, Update, Delete &amp; Merge. Uses SQLBulkCopy under the hood. Please leave a Github star if you find this project useful.</description>
-    <releaseNotes>Added ColumnAttributeMapping() method which custom-maps using the LinQ's ColumnAttribute.</releaseNotes>
+    <releaseNotes>Added an extension suger method, which consumes Linq-to-Sql's DataContext.</releaseNotes>
     <tags>sql linq-to-sql datacontext transaction crud database bulk bulktools</tags>
   </metadata>
 </package>
