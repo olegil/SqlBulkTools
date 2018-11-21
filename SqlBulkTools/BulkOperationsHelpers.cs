@@ -106,7 +106,7 @@ namespace AgentFire.Sql.BulkTools
                         maxCharLength = "max";
                     }
 
-                    columnType = $"{columnType}({maxCharLength})";
+                    columnType = $"{columnType}({maxCharLength}) COLLATE DATABASE_DEFAULT"; // COLLATE fix credit goes to Ruedi Kaufmann.
                 }
             }
 

@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>AgentFire.Sql.BulkTools</id>
-    <version>1.0.5</version>
+    <version>1.0.5.1</version>
     <title>AgentFire.Sql.BulkTools</title>
     <authors>AgentFire</authors>
     <owners>AgentFire</owners>
