@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     internal class IdentityException : Exception
     {

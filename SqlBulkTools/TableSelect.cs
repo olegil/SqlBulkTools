@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class CollectionSelect<T>
+    public class CollectionSelect<T>: IFluentSyntax
     {
         private readonly IEnumerable<T> _list;
         private readonly string _sourceAlias;

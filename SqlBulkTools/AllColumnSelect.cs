@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Linq.Mapping;
 using System.Data.SqlClient;
 using System.Linq.Expressions;
+using System.Reflection;
 
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class AllColumnSelect<T>
+    public class AllColumnSelect<T> : IFluentSyntax
     {
         private readonly IEnumerable<T> _list;
         private readonly string _tableName;
@@ -83,8 +85,30 @@ namespace SqlBulkTools
         /// <returns></returns>
         public AllColumnSelect<T> CustomColumnMapping(Expression<Func<T, object>> source, string destination)
         {
-            var propertyName = _helper.GetPropertyName(source);
-            CustomColumnMappings.Add(propertyName, destination);
+            string propertyName = _helper.GetPropertyName(source);
+            CustomColumnMappings[propertyName] = destination;
+            return this;
+        }
+
+        /// <summary>
+        /// By default SqlBulkTools will attempt to match the model property names to SQL column names (case insensitive). 
+        /// If any of your model property names do not match 
+        /// the SQL table column(s) as defined in given table, then this method will auto-map them using <see cref="ColumnAttribute"/> on your properties.
+        /// </summary>
+        public AllColumnSelect<T> ColumnAttributeMapping()
+        {
+            foreach (PropertyInfo prop in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+            {
+                ColumnAttribute attr = prop.GetCustomAttribute<ColumnAttribute>();
+
+                if (attr?.Name == null || attr.Name == prop.Name)
+                {
+                    continue;
+                }
+
+                CustomColumnMappings[prop.Name] = attr.Name;
+            }
+
             return this;
         }
 
@@ -97,7 +121,9 @@ namespace SqlBulkTools
         public AllColumnSelect<T> AddTmpDisableNonClusteredIndex(string indexName)
         {
             if (indexName == null)
+            {
                 throw new ArgumentNullException(nameof(indexName));
+            }
 
             _disableIndexList.Add(indexName);
 

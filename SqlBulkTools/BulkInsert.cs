@@ -6,7 +6,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     /// <summary>
     /// 

@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Linq.Mapping;
 using System.Data.SqlClient;
 using System.Linq.Expressions;
+using System.Reflection;
 
-namespace SqlBulkTools
+namespace AgentFire.Sql.BulkTools
 {
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class ColumnSelect<T>
+    public class ColumnSelect<T> : IFluentSyntax
     {
         private readonly IEnumerable<T> _list;
         private readonly string _tableName;
@@ -46,8 +48,8 @@ namespace SqlBulkTools
         /// <param name="bulkCopyBatchSize"></param>
         /// <param name="sqlBulkCopyOptions"></param>
         /// <param name="ext"></param>
-        public ColumnSelect(IEnumerable<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias, 
-            int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, SqlBulkCopyOptions sqlBulkCopyOptions, 
+        public ColumnSelect(IEnumerable<T> list, string tableName, HashSet<string> columns, string schema, string sourceAlias, string targetAlias,
+            int sqlTimeout, int bulkCopyTimeout, bool bulkCopyEnableStreaming, int? bulkCopyNotifyAfter, int? bulkCopyBatchSize, SqlBulkCopyOptions sqlBulkCopyOptions,
             BulkOperations ext)
         {
             _helper = new BulkOperationsHelpers();
@@ -103,6 +105,28 @@ namespace SqlBulkTools
         }
 
         /// <summary>
+        /// By default SqlBulkTools will attempt to match the model property names to SQL column names (case insensitive). 
+        /// If any of your model property names do not match 
+        /// the SQL table column(s) as defined in given table, then this method will auto-map them using <see cref="ColumnAttribute"/> on your properties.
+        /// </summary>
+        public ColumnSelect<T> ColumnAttributeMapping()
+        {
+            foreach (PropertyInfo prop in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+            {
+                ColumnAttribute attr = prop.GetCustomAttribute<ColumnAttribute>();
+
+                if (attr?.Name == null || attr.Name == prop.Name)
+                {
+                    continue;
+                }
+
+                CustomColumnMappings[prop.Name] = attr.Name;
+            }
+
+            return this;
+        }
+
+        /// <summary>
         /// Disables non-clustered index. You can select One to Many non-clustered indexes. This option should be considered on 
         /// a case-by-case basis. Understand the consequences before using this option.  
         /// </summary>
@@ -111,7 +135,9 @@ namespace SqlBulkTools
         public ColumnSelect<T> AddTmpDisableNonClusteredIndex(string indexName)
         {
             if (indexName == null)
+            {
                 throw new ArgumentNullException(nameof(indexName));
+            }
 
             _disableIndexList.Add(indexName);
 
@@ -137,8 +163,8 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkInsert<T> BulkInsert()
         {
-            return new BulkInsert<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias, 
-                CustomColumnMappings, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
+            return new BulkInsert<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias,
+                CustomColumnMappings, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter,
                 _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
         }
 
@@ -152,7 +178,7 @@ namespace SqlBulkTools
         public BulkInsertOrUpdate<T> BulkInsertOrUpdate()
         {
             return new BulkInsertOrUpdate<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias,
-                CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
+                CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter,
                 _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
         }
 
@@ -163,8 +189,8 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkUpdate<T> BulkUpdate()
         {
-            return new BulkUpdate<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias, 
-                CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, 
+            return new BulkUpdate<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias,
+                CustomColumnMappings, _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter,
                 _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
         }
 
@@ -175,9 +201,9 @@ namespace SqlBulkTools
         /// <returns></returns>
         public BulkDelete<T> BulkDelete()
         {
-            return new BulkDelete<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias, CustomColumnMappings, 
+            return new BulkDelete<T>(_list, _tableName, _schema, _columns, _disableIndexList, _disableAllIndexes, _sourceAlias, _targetAlias, CustomColumnMappings,
                 _sqlTimeout, _bulkCopyTimeout, _bulkCopyEnableStreaming, _bulkCopyNotifyAfter, _bulkCopyBatchSize, _sqlBulkCopyOptions, _ext);
-        } 
+        }
 
     }
 }

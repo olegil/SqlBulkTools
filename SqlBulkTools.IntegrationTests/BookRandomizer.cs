@@ -32,7 +32,9 @@ namespace SqlBulkTools.IntegrationTests
             if (pi == null ||
                 pi.Name != "Price" ||
                 pi.PropertyType != typeof(decimal))
+            {
                 return new NoSpecimen(request);
+            }
 
             return context.Resolve(
                 new RangedNumberRequest(typeof(decimal), 1.0m, 268.5m));
@@ -47,9 +49,10 @@ namespace SqlBulkTools.IntegrationTests
             if (pi != null &&
                 pi.Name == "ISBN" &&
                 pi.PropertyType == typeof(string))
-
-            return context.Resolve(typeof(string))
+            {
+                return context.Resolve(typeof(string))
                     .ToString().Substring(0, 13);
+            }
 
             return new NoSpecimen(request);
         }
@@ -63,9 +66,10 @@ namespace SqlBulkTools.IntegrationTests
             if (pi != null &&
                 pi.Name == "Title" &&
                 pi.PropertyType == typeof(string))
-
+            {
                 return context.Resolve(typeof(string))
                         .ToString().Substring(0, 10);
+            }
 
             return new NoSpecimen(request);
         }
