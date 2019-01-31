@@ -1,11 +1,11 @@
-<img src="http://gregnz.com/images/SqlBulkTools/icon-large.png" alt="SqlBulkTools"> 
-#SqlBulkTools
+<img src="http://gregnz.com/images/SqlBulkTools/icon-large.png" alt="SqlBulkTools">
+# SqlBulkTools
 -----------------------------
 Welcome to Version 2! High-performance C# Bulk operations for SQL Server (starting from 2008) and Azure SQL Database. Supports Bulk Insert, Update, Delete & Merge. Uses SQLBulkCopy under the hood. Please leave a Github star if you find this project useful. 
 
-##Examples
+## Examples
 
-####Getting started
+#### Getting started
 -----------------------------
 ```c#
 using SqlBulkTools;
@@ -33,7 +33,7 @@ public class Book {
 }
 
 ```
-###BulkInsert
+### BulkInsert
 ---------------
 ```c#
 books = GetBooks();
@@ -56,7 +56,7 @@ for more info.
 
 ```
 
-###BulkInsertOrUpdate (aka Merge)
+### BulkInsertOrUpdate (aka Merge)
 ---------------
 ```c#
 books = GetBooks();
@@ -101,7 +101,7 @@ identity column.
 */
 ```
 
-###BulkUpdate
+### BulkUpdate
 ---------------
 ```c#
 books = GetBooksToUpdate();
@@ -130,7 +130,7 @@ identity column.
 
 bulk.CommitTransaction("DefaultConnection");
 ```
-###BulkDelete
+### BulkDelete
 ---------------
 ```c#
 /* Tip: Considering you only need to match a key, use a DTO containing only the column(s) needed for 
@@ -160,7 +160,7 @@ an InvalidOperationException.
 
 ```
 
-###Custom Mappings
+### Custom Mappings
 ---------------
 ```c#
 /* If the property names in your model don't match the column names in the corresponding table, you 
@@ -179,7 +179,7 @@ bulk.CommitTransaction("DefaultConnection");
 
 ```
 
-###Advanced
+### Advanced
 ---------------
 ```c#
 books = GetBooks();
@@ -214,7 +214,7 @@ bulk.CommitTransaction("DefaultConnection");
 
 ```
 
-###How does SqlBulkTools compare to others? 
+### How does SqlBulkTools compare to others? 
 <img src="http://gregnz.com/images/SqlBulkTools/performance_comparison.png" alt="Performance Comparison">
 
 <b>Test notes:</b>
@@ -222,10 +222,10 @@ bulk.CommitTransaction("DefaultConnection");
 - There were 3 non-clustered indexes on the table. <br/>
 - SqlBulkTools used the following setup options: AddAllColumns, TmpDisableAllNonClusteredIndexes. <br/>
 
-###More on Setup and CommitTransaction...
+### More on Setup and CommitTransaction...
 ---------------
 
-#####Setup<T>
+##### Setup<T>
 ```c#
 Setup<T>(Func<Setup<T>, CollectionSelect<T>> list)
 
@@ -239,7 +239,7 @@ operation are not exposed. For example the MatchTargetOn method is not accessibl
 BulkInsert method because it would not make sense. */
 ```
 
-#####CommitTransaction
+##### CommitTransaction
 ```c#
 CommitTransaction(string connectionName, SqlCredential credentials = null)
 CommitTransaction(SqlConnection connection)
