@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>SqlBulkTools</RootNamespace>
+        <Title>DungAT.SqlBulkTools.EntityFramework6</Title>
+        <Authors>DungAT</Authors>
+        <Description>Extension method for SqlBulkTools, support EF6</Description>
+        <Copyright>DungAT</Copyright>
+        <PackageProjectUrl>https://github.com/DungAT98/SqlBulkTools</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/DungAT98/SqlBulkTools</RepositoryUrl>
+        <PackageTags>entityframework,ef,ef6,sqlbulktools,bulk</PackageTags>
+        <Company>DungAT</Company>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
+        <PackageId>DungAT.SqlBulkTools.EntityFramework6</PackageId>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DungAT.SqlBulkTools" Version="2.0.1" />
+      <PackageReference Include="EntityFramework" Version="6.0.0" />
+    </ItemGroup>
+
+</Project>

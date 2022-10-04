@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>SqlBulkTools</RootNamespace>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Title>DungAT.SqlBulkTools.EntityFrameworkCore</Title>
+        <Authors>DungAT</Authors>
+        <Description>Extension method for SqlBulkTools, support Entity Framework Core</Description>
+        <Copyright>DungAT</Copyright>
+        <PackageProjectUrl>https://github.com/DungAT98/SqlBulkTools</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/DungAT98/SqlBulkTools</RepositoryUrl>
+        <PackageTags>entityframework,ef,efcore,sqlbulktools,bulk</PackageTags>
+        <AssemblyVersion>1.0.1</AssemblyVersion>
+        <FileVersion>1.0.1</FileVersion>
+        <PackageId>DungAT.SqlBulkTools.EntityFrameworkCore</PackageId>
+        <PackageVersion>1.0.1</PackageVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DungAT.SqlBulkTools" Version="2.0.1" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.29" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="3.1.29" />
+    </ItemGroup>
+
+</Project>
