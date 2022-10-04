@@ -23,7 +23,7 @@ jobs:
 
       # Publish
       - name: Publish DungAT.SqlBulkTools
-        id: publish_nuget
+        id: publish_main_nuget
         uses: alirezanet/publish-nuget@v3.0.4
         with:
           # Filepath of the project to be packaged, relative to root of repository
@@ -61,7 +61,7 @@ jobs:
           INCLUDE_SYMBOLS: true
 
       - name: Publish DungAT.SqlBulkTools.EntityFramework6
-        id: publish_nuget
+        id: publish_ef6_nuget
         uses: alirezanet/publish-nuget@v3.0.4
         with:
           # Filepath of the project to be packaged, relative to root of repository
@@ -99,7 +99,7 @@ jobs:
           INCLUDE_SYMBOLS: true
 
       - name: Publish DungAT.SqlBulkTools.EntityFrameworkCore
-        id: publish_nuget
+        id: publish_efcore_nuget
         uses: alirezanet/publish-nuget@v3.0.4
         with:
           # Filepath of the project to be packaged, relative to root of repository
