@@ -3,18 +3,16 @@
 namespace SqlBulkTools
 {
     /// <summary>
-    /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class CollectionSelect<T>
     {
+        private readonly BulkOperations _ext;
         private readonly IEnumerable<T> _list;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
-        private readonly BulkOperations _ext;
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="list"></param>
         /// <param name="sourceAlias"></param>
@@ -29,7 +27,7 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// Set the name of table for operation to take place. Registering a table is Required.
+        ///     Set the name of table for operation to take place. Registering a table is Required.
         /// </summary>
         /// <param name="tableName">Name of the table.</param>
         /// <returns></returns>
