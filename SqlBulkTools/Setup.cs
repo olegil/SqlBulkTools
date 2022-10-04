@@ -3,17 +3,15 @@
 namespace SqlBulkTools
 {
     /// <summary>
-    /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class Setup<T>
     {
+        private readonly BulkOperations _ext;
         private readonly string _sourceAlias;
         private readonly string _targetAlias;
-        private readonly BulkOperations _ext;
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="sourceAlias"></param>
         /// <param name="targetAlias"></param>
@@ -26,7 +24,7 @@ namespace SqlBulkTools
         }
 
         /// <summary>
-        /// Represents the collection of objects to be inserted/upserted/updated/deleted (configured in next steps). 
+        ///     Represents the collection of objects to be inserted/upserted/updated/deleted (configured in next steps).
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>

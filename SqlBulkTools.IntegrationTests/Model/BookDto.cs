@@ -1,7 +1,6 @@
-﻿namespace SqlBulkTools.IntegrationTests.TestEnvironment
+﻿namespace SqlBulkTools.IntegrationTests.TestEnvironment;
+
+internal class BookDto
 {
-    class BookDto
-    {
-        public int Id { get; set; }
-    }
+    public int Id { get; set; }
 }
