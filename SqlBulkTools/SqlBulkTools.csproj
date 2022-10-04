@@ -5,7 +5,7 @@
         <TargetFrameworks>net5.0;net6.0;netstandard2.0</TargetFrameworks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>DungAT.SqlBulkTools</PackageId>
-        <PackageVersion>2.0.0</PackageVersion>
+        <PackageVersion>2.0.1</PackageVersion>
         <Title>DungAT.SqlBulkTools</Title>
         <Authors>DungAT</Authors>
         <Description>High-performance C# Bulk operations for SQL Server (starting from 2008) and Azure SQL Database. Supports Bulk Insert, Update, Delete &amp; Merge. Uses SQLBulkCopy under the hood. Please leave a Github star if you find this project useful.</Description>
@@ -15,8 +15,8 @@
         <PackageTags>sqlbulktools,sql,bulk</PackageTags>
         <Company>DungAT</Company>
         <Product>DungAT.SqlBulkTools</Product>
-        <AssemblyVersion>2.0.0</AssemblyVersion>
-        <FileVersion>2.0.0</FileVersion>
+        <AssemblyVersion>2.0.1</AssemblyVersion>
+        <FileVersion>2.0.1</FileVersion>
         <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
